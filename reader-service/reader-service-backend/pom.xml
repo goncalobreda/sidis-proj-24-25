@@ -30,7 +30,7 @@
             <version>3.3.4</version>
         </dependency>
 
-        <!-- H2 Database (caso necessário) -->
+        <!-- H2 Database  -->
         <dependency>
             <groupId>com.h2database</groupId>
             <artifactId>h2</artifactId>
