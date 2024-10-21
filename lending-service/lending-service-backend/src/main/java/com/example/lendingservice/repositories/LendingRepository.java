@@ -29,7 +29,7 @@ public interface LendingRepository {
     List<Lending> findByOverdueTrueOrderByExpectedReturnDateDesc();
     List<Object[]> findLendingsCountByGenreAndMonth(int month, int year);
 
-    Optional<Lending> findTopByOrderByLendingIDDesc();
+    Optional<Lending> findFirstByOrderByLendingIDDesc();
 
     List<Lending> findLendingsWithReturnDate();
 

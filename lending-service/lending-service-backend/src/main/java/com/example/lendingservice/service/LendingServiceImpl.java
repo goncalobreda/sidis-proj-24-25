@@ -38,7 +38,7 @@ public class LendingServiceImpl implements LendingService {
 
     @Override
     public Optional<Lending> getLastId() {
-        return lendingRepository.findTopByOrderByLendingIDDesc();
+        return lendingRepository.findFirstByOrderByLendingIDDesc();
     }
 
     @Override
