@@ -12,7 +12,7 @@ import java.time.LocalDate;
 import java.util.Optional;
 
 @Component
-@Profile("bootstrap")
+//@Profile("bootstrap")
 public class LendingBootstrap implements CommandLineRunner {
 
     private final LendingRepository lendingRepo;
