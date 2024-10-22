@@ -37,7 +37,7 @@ public class LendingBootstrap implements CommandLineRunner {
         }
 
         // Criar alguns exemplos de empréstimos devolvidos e ativos
-        createLendingIfNotExists(1L, "2024/1", "2024-02-01", "2024-02-15", "2024-02-16", true, 10);
+        createLendingIfNotExists(1L, "2024/1", "2024-02-01", "2024-02-18", "2024-02-16", true, 10);
         createLendingIfNotExists(2L, "2024/2", "2024-03-01", "2024-03-10", "2024-03-16", false, 0);
         createActiveLendingIfNotExists(1L, "2024/3", "2024-04-01", "2024-04-16");
 
