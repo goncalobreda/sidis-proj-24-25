@@ -14,7 +14,7 @@ import java.util.Optional;
 public interface SpringDataReaderRepository extends ReaderRepository, ReaderRepoCustom, CrudRepository<Reader, Long> {
 
     @Override
-    @Query("SELECT r FROM Reader r ORDER BY substring(r.readerID, 1, 4), cast(substring(r.readerID, 6, 10) AS int) DESC")
+    @Query(value = "SELECT * FROM Reader ORDER BY readerID DESC LIMIT 1", nativeQuery = true)
     Optional<Reader> findTopByOrderByReaderIDDesc();
 
     @Override

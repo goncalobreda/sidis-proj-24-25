@@ -40,16 +40,18 @@ public class ReaderBootstrap implements CommandLineRunner {
         System.out.println("ReaderBootstrapper finished.");
     }
 
+    // Método para verificar se o leitor já existe com base no email
     private void createReaderIfNotExists(String name, String password, String email, String birthdate, String phoneNumber, boolean GDPR) {
-        if (!readerExists(email)) {
+        // Usar o método existsByEmail para verificar a existência
+        if (!readerRepo.existsByEmail(email)) {
             Reader reader = new Reader(name, password, email, birthdate, phoneNumber, GDPR);
             reader.setCreatedAt(LocalDateTime.now());  // Definir o createdAt manualmente
-            reader.setCreatedBy("system"); // ou algum utilizador apropriado
+            reader.setCreatedBy("system"); // ou outro utilizador apropriado
             readerRepo.save(reader);
+            System.out.println("Leitor criado: " + reader.getName());
+        } else {
+            // Se o leitor já existir, exibe mensagem
+            System.out.println("Leitor já existe com o email: " + email);
         }
-    }
-
-    private boolean readerExists(String email) {
-        return readerRepo.findByEmail(email).isPresent();
     }
 }

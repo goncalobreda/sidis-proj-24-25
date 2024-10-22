@@ -10,6 +10,8 @@ public interface ReaderRepository {
 
     Optional<Reader> findTopByOrderByReaderIDDesc();
 
+    boolean existsByEmail(String email);
+
     List<Reader> findTop5Readers();
 
     Optional<Reader> findByReaderID(String readerID);
