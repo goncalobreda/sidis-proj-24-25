@@ -2,6 +2,7 @@ package com.example.bookservice.service;
 
 import com.example.bookservice.model.Book;
 import com.example.bookservice.model.Genre;
+import com.example.bookservice.model.GenreBookCountDTO;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -30,14 +31,13 @@ public interface BookService {
 
     void addImageToBook(Long bookID, byte[] image, String contentType);
 
+    List<GenreBookCountDTO> findTop5Books();
 
     Optional<Book> getBookById(final Long bookID);
 
     List<Book> getBooksByAuthorId(String authorID);
 
     boolean isBookIDUnique(Long bookID);
-
-    boolean isValidIsbn(final String isbn);
 
     Book partialUpdate(Long bookID, EditBookRequest request, long desiredVersion);
 

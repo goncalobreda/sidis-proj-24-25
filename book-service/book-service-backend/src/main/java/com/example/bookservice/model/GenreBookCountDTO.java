@@ -2,22 +2,22 @@ package com.example.bookservice.model;
 
 public class GenreBookCountDTO {
 
-    private String genre;
+    private String bookID;
     private Long bookCount;
 
     public GenreBookCountDTO(){}
 
     public GenreBookCountDTO(String genre, Long bookCount) {
-        this.genre = genre;
+        this.bookID = genre;
         this.bookCount = bookCount;
     }
 
-    public String getGenre() {
-        return genre;
+    public String getBookID() {
+        return bookID;
     }
 
-    public void setGenre(String genre) {
-        this.genre = genre;
+    public void setBookID(String bookID) {
+        this.bookID = bookID;
     }
 
     public Long getBookCount() {

@@ -1,7 +1,10 @@
 package com.example.bookservice.service;
 
+import com.example.bookservice.client.LendingDTO;
+import com.example.bookservice.client.LendingServiceClient;
 import com.example.bookservice.model.Author;
 import com.example.bookservice.model.CoAuthorDTO;
+import com.example.bookservice.model.TopAuthorLendingDTO;
 import com.example.bookservice.repositories.AuthorRepository;
 import com.example.bookservice.model.Book;
 import com.example.bookservice.repositories.BookRepository;
@@ -23,9 +26,15 @@ public class AuthorServiceImpl implements AuthorService {
 
     private final BookRepository bookRepository;
 
-    public AuthorServiceImpl(AuthorRepository authorRepository, BookRepository bookRepository) {
+    private final LendingServiceClient lendingServiceClient;
+
+    private final BookService bookService;
+
+    public AuthorServiceImpl(AuthorRepository authorRepository, BookRepository bookRepository, LendingServiceClient lendingServiceClient, BookService bookService) {
         this.authorRepository = authorRepository;
         this.bookRepository = bookRepository;
+        this.lendingServiceClient = lendingServiceClient;
+        this.bookService = bookService;
     }
 
     @Override
@@ -121,4 +130,27 @@ public class AuthorServiceImpl implements AuthorService {
         authorRepository.save(author);
     }
 
+    public List<TopAuthorLendingDTO> findTop5AuthorsPerLending() {
+        List<LendingDTO> lendings = lendingServiceClient.getAllLendings();
+
+        Map<Author, Long> authorLendingCounts = new HashMap<>();
+
+        for (LendingDTO lending : lendings) {
+            Book book = bookService.getBookById(lending.getBookID())  // Corrigido para pegar o bookID do LendingDTO
+                    .orElseThrow(() -> new NotFoundException("Book not found with ID: " + lending.getBookID()));
+
+            for (Author author : book.getAuthor()) {  // book.getAuthor() retorna a lista de autores
+                authorLendingCounts.put(author, authorLendingCounts.getOrDefault(author, 0L) + 1);
+            }
+        }
+
+        List<Map.Entry<Author, Long>> top5Authors = authorLendingCounts.entrySet().stream()
+                .sorted(Map.Entry.<Author, Long>comparingByValue().reversed())
+                .limit(5)
+                .collect(Collectors.toList());
+
+        return top5Authors.stream()
+                .map(entry -> new TopAuthorLendingDTO(entry.getKey().getAuthorID(), entry.getKey().getName(), entry.getValue()))
+                .collect(Collectors.toList());
+    }
 }

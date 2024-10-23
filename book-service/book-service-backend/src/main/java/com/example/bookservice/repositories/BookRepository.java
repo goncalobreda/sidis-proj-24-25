@@ -16,7 +16,6 @@ public interface BookRepository {
 
     List<Map.Entry<String, Long>> findTop5Genres();
 
-
     List<Book> findAll();
 
     Optional<Book> findByIsbn(String isbn);

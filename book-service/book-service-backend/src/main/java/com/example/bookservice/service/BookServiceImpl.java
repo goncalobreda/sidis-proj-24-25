@@ -1,16 +1,16 @@
 package com.example.bookservice.service;
 
-import com.example.bookservice.model.Author;
+import com.example.bookservice.client.LendingDTO;
+import com.example.bookservice.client.LendingServiceClient;
+import com.example.bookservice.model.*;
 import com.example.bookservice.repositories.AuthorRepository;
-import com.example.bookservice.model.Genre;
-import com.example.bookservice.model.BookImage;
 import com.example.bookservice.repositories.BookImageRepository;
 import com.example.bookservice.repositories.GenreRepository;
 import com.example.bookservice.exceptions.NotFoundException;
 
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import com.example.bookservice.model.Book;
 import com.example.bookservice.repositories.BookRepository;
 
 import java.util.*;
@@ -25,16 +25,21 @@ public class BookServiceImpl implements BookService {
 
     private final AuthorRepository authorRepository;
 
-    public BookServiceImpl(BookRepository bookRepository, BookImageRepository bookImageRepository, GenreRepository genreRepository, AuthorRepository authorRepository) {
+    private final LendingServiceClient lendingServiceClient;
+
+    @Autowired
+    public BookServiceImpl(BookRepository bookRepository, BookImageRepository bookImageRepository, GenreRepository genreRepository, AuthorRepository authorRepository, LendingServiceClient lendingServiceClient) {
         this.bookRepository = bookRepository;
         this.bookImageRepository = bookImageRepository;
         this.genreRepository = genreRepository;
         this.authorRepository = authorRepository;
+        this.lendingServiceClient = lendingServiceClient;
     }
 
     public Book create(CreateBookRequest request) {
         String isbn = request.getIsbn();
-        if (!isValidIsbn(isbn)) {
+        Book book = new Book();
+        if (!book.isValidIsbn(isbn)) {
             throw new IllegalArgumentException("Invalid ISBN");
         }
 
@@ -80,71 +85,6 @@ public class BookServiceImpl implements BookService {
     public Optional<Book> getBookById(final Long bookID) {
         return bookRepository.findById(bookID);
     }
-
-    public boolean isValidISBN13(String isbn) {
-        if (isbn == null || isbn.length() != 13) {
-            return false;
-        }
-        int sum = 0;
-        for (int i = 0; i < 12; i++) {
-            int digit = Character.getNumericValue(isbn.charAt(i));
-            if (digit < 0 || digit > 9) {
-                return false;
-            }
-            sum += (i % 2 == 0) ? digit : digit * 3;
-        }
-        int checkDigit = Character.getNumericValue(isbn.charAt(12));
-        int calculatedCheckDigit = 10 - (sum % 10);
-        if (calculatedCheckDigit == 10) {
-            calculatedCheckDigit = 0;
-        }
-        return checkDigit == calculatedCheckDigit;
-    }
-
-    public boolean isValidISBN10(String isbn) {
-        if (isbn == null || isbn.length() != 10) {
-            return false;
-        }
-        int sum = 0;
-        for (int i = 0; i < 9; i++) {
-            int digit = Character.getNumericValue(isbn.charAt(i));
-            if (digit < 0 || digit > 9) {
-                return false;
-            }
-            sum += (i + 1) * digit;
-        }
-        char lastChar = isbn.charAt(9);
-        if (lastChar == 'X') {
-            sum += 10;
-        } else {
-            int lastDigit = Character.getNumericValue(lastChar);
-            if (lastDigit < 0 || lastDigit > 9) {
-                return false;
-            }
-            sum += 10 * lastDigit;
-        }
-        return sum % 11 == 0;
-    }
-
-    @Override
-    public boolean isValidIsbn(String isbn) {
-        if (isbn == null || isbn.isEmpty()) {
-            return false;
-        }
-        // Remove spaces and dashes
-        isbn = isbn.replaceAll("[\\s-]", "");
-        // Check if the length is valid for ISBN-10 or ISBN-13
-        if (isbn.length() != 10 && isbn.length() != 13) {
-            return false;
-        }
-        // Check if the ISBN-10 or ISBN-13 format is valid
-        if (isbn.length() == 10) {
-            return isValidISBN10(isbn);
-        } else {
-            return isValidISBN13(isbn);
-        }
-    }
-
 
     public List<Book> getAll() {
         return bookRepository.findAll();
@@ -229,5 +169,23 @@ public class BookServiceImpl implements BookService {
         bookRepository.save(existingBook);
         return existingBook;
     }
+
+    @Override
+    public List<GenreBookCountDTO> findTop5Books() {
+        List<LendingDTO> lendings = lendingServiceClient.getAllLendings();
+
+        Map<Long, Long> bookIdCounts = lendings.stream()
+                .collect(Collectors.groupingBy(LendingDTO::getBookID, Collectors.counting()));
+
+        List<Map.Entry<Long, Long>> top5Books = bookIdCounts.entrySet().stream()
+                .sorted(Map.Entry.<Long, Long>comparingByValue().reversed())
+                .limit(5)
+                .collect(Collectors.toList());
+
+        return top5Books.stream()
+                .map(entry -> new GenreBookCountDTO(entry.getKey().toString(), entry.getValue()))
+                .collect(Collectors.toList());
+    }
+
 
 }

@@ -3,6 +3,7 @@ package com.example.bookservice.api;
 import com.example.bookservice.model.Author;
 import com.example.bookservice.model.AuthorImage;
 import com.example.bookservice.model.CoAuthorDTO;
+import com.example.bookservice.model.TopAuthorLendingDTO;
 import com.example.bookservice.service.AuthorServiceImpl;
 import com.example.bookservice.service.CreateAuthorRequest;
 import com.example.bookservice.service.EditAuthorRequest;
@@ -132,5 +133,10 @@ public class AuthorController {
         return ResponseEntity.ok(coAuthors);
     }
 
+    @GetMapping("/top5Authors")
+    public List<TopAuthorLendingDTO> getTop5Authors() {
+        return authorService.findTop5AuthorsPerLending();
     }
+
+}
 

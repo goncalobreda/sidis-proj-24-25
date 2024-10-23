@@ -188,6 +188,12 @@ class BookController {
         }
         return Long.parseLong(ifMatchHeader);
     }
+
+    @Operation(summary = "Get top 5 books by number of lendings")
+    @GetMapping("/top5Books")
+    public List<GenreBookCountDTO> getTop5Books() {
+        return bookService.findTop5Books();
+    }
 }
 
 
