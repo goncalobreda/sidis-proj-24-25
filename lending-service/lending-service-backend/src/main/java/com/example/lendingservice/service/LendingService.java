@@ -15,6 +15,9 @@ public interface LendingService {
     Optional<Lending> getLastId();
     List<Lending> getOverdueLendingsSortedByTardiness();
     Lending create(CreateLendingRequest request);
+
+    void deleteLendingById(String lendingID);
+
     Lending partialUpdate(int id1, int id2, EditLendingRequest resource, long desiredVersion);
 
     int calculateFine(String lendingID);

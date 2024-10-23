@@ -13,6 +13,7 @@ import java.util.Optional;
 public interface LendingRepository {
 
     Optional<Lending> findByLendingID(String lendingID);
+    void delete(Lending lending);
 
     @NotNull Iterable<Lending> findAll();
 

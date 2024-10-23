@@ -1,10 +1,12 @@
 package com.example.lendingservice.api;
 
 import com.example.lendingservice.model.Lending;
+import com.example.lendingservice.repositories.LendingRepository;
 import com.example.lendingservice.service.LendingService;
 import com.example.lendingservice.service.CreateLendingRequest;
 import com.example.lendingservice.service.EditLendingRequest;
 import com.example.lendingservice.exceptions.NotFoundException;
+import com.example.lendingservice.service.LendingServiceImpl;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -13,11 +15,13 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 @Tag(name = "Lendings", description = "Endpoints for managing Lendings")
 @RestController
@@ -27,6 +31,10 @@ public class LendingController {
 
     private final LendingService service;
     private final LendingViewMapper lendingViewMapper;
+    private final LendingRepository lendingRepository;
+
+    @Autowired
+    private LendingServiceImpl lendingService;
 
     @Operation(summary = "Gets all lendings")
     @ApiResponse(description = "Success", responseCode = "200", content = {
@@ -112,5 +120,27 @@ public class LendingController {
         Map<String, Double> result = service.getAverageLendingDurationPerBook();
         return ResponseEntity.ok(result);
     }
+
+    @PostMapping("/sync")
+    public ResponseEntity<Lending> createLendingSync(@RequestBody Lending lending) {
+        lending.updateOverdueStatus();
+        Lending savedLending = lendingRepository.save(lending); // Guardar o empréstimo sincronizado
+        return ResponseEntity.ok(savedLending);
+    }
+
+
+
+    @DeleteMapping("/id/{id1}/{id2}")
+    public ResponseEntity<Void> deleteLending(
+            @PathVariable("id1") String id1,
+            @PathVariable("id2") String id2) {
+
+        String lendingID = id1 + "/" + id2;  // Combina o id1 e id2 para formar o lendingID completo
+        lendingService.deleteLendingById(lendingID);  // Chama o serviço para eliminar o lending
+
+        return ResponseEntity.noContent().build();  // Retorna uma resposta 204 No Content
+    }
+
+
 
 }
