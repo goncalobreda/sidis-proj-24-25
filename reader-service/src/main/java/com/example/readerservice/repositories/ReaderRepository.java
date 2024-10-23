@@ -12,7 +12,7 @@ public interface ReaderRepository {
 
     boolean existsByEmail(String email);
 
-    List<Reader> findTop5Readers();
+
 
     Optional<Reader> findByReaderID(String readerID);
 

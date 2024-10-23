@@ -2,6 +2,7 @@ package com.example.readerservice.api;
 
 import com.example.readerservice.exceptions.NotFoundException;
 import com.example.readerservice.model.Reader;
+import com.example.readerservice.model.ReaderCountDTO;
 import com.example.readerservice.service.EditReaderRequest;
 import com.example.readerservice.service.ReaderServiceImpl;
 import com.example.readerservice.service.SearchReadersQuery;
@@ -66,11 +67,6 @@ class ReaderController {
         return ResponseEntity.ok().eTag(Long.toString(reader.getVersion())).body(readerMapper.toReaderView(reader));
     }
 
-    @Operation(summary = "Gets the Top 5 Readers")
-    @GetMapping(value = "/top5")
-    public List<ReaderView> findTop5() {
-        return readerMapper.toReaderView(readerService.getTop5Readers());
-    }
 
     @Operation(summary = "Partially updates an existing reader")
     @PatchMapping(value = "/{id1}/{id2}")
@@ -93,5 +89,11 @@ class ReaderController {
             return Long.parseLong(ifMatchHeader.substring(1, ifMatchHeader.length() - 1));
         }
         return Long.parseLong(ifMatchHeader);
+    }
+
+    @Operation(summary = "Get top 5 Readers by number of lendings")
+    @GetMapping("/top5Readers")
+    public List<ReaderCountDTO> getTop5Readers() {
+        return readerService.findTop5Readers();
     }
 }

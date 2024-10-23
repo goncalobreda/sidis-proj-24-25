@@ -1,26 +1,37 @@
 package com.example.readerservice.service;
 
+import com.example.readerservice.api.ReaderView;
+import com.example.readerservice.api.ReaderViewMapper;
+import com.example.readerservice.client.LendingDTO;
+import com.example.readerservice.client.LendingServiceClient;
 import com.example.readerservice.exceptions.ConflictException;
 import com.example.readerservice.exceptions.NotFoundException;
 import com.example.readerservice.model.Reader;
+import com.example.readerservice.model.ReaderCountDTO;
 import com.example.readerservice.repositories.ReaderRepository;
 import org.springframework.stereotype.Service;
 
-import jakarta.validation.ValidationException;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 public class ReaderServiceImpl implements ReaderService {
 
     private final ReaderRepository readerRepository;
     private final EditReaderMapper editReaderMapper;
+    private LendingServiceClient lendingServiceClient;
+    private ReaderViewMapper readerViewMapper;
 
-    public ReaderServiceImpl(ReaderRepository readerRepository, EditReaderMapper editReaderMapper) {
+
+    public ReaderServiceImpl(ReaderRepository readerRepository, EditReaderMapper editReaderMapper, LendingServiceClient lendingServiceClient, ReaderViewMapper readerViewMapper) {
         this.readerRepository = readerRepository;
         this.editReaderMapper = editReaderMapper;
+        this.lendingServiceClient = lendingServiceClient;
+        this.readerViewMapper = readerViewMapper;
     }
 
     @Override
@@ -60,10 +71,7 @@ public class ReaderServiceImpl implements ReaderService {
         return reader;
     }
 
-    @Override
-    public List<Reader> getTop5Readers() {
-        return readerRepository.findTop5Readers();
-    }
+
 
     @Override
     public Optional<Reader> getReaderByID(final String readerID) {
@@ -131,4 +139,27 @@ public class ReaderServiceImpl implements ReaderService {
             }
         }
     }
+
+    public List<ReaderCountDTO> findTop5Readers() {
+        // Obter todos os lendings
+        List<LendingDTO> lendings = lendingServiceClient.getAllLendings();
+
+        // Contar quantos empréstimos cada reader fez
+        Map<String, Long> readerIdCounts = lendings.stream()
+                .collect(Collectors.groupingBy(LendingDTO::getReaderID, Collectors.counting()));
+
+        // Obter os 5 readers com mais empréstimos
+        List<Map.Entry<String, Long>> top5Readers = readerIdCounts.entrySet().stream()
+                .sorted(Map.Entry.<String, Long>comparingByValue().reversed())
+                .limit(5)
+                .collect(Collectors.toList());
+
+
+        return top5Readers.stream()
+                .map(entry -> new ReaderCountDTO(entry.getKey(), entry.getValue()))
+                .collect(Collectors.toList());
+    }
+
+
+
 }

@@ -1,6 +1,7 @@
 package com.example.readerservice.service;
 
 import com.example.readerservice.model.Reader;
+import com.example.readerservice.model.ReaderCountDTO;
 import com.example.readerservice.service.Page;
 import org.springframework.stereotype.Service;
 
@@ -17,7 +18,8 @@ public interface ReaderService {
 
     Reader partialUpdate(String readerID, EditReaderRequest request, long parseLong);
 
-    List<Reader> getTop5Readers();
+
+    List<ReaderCountDTO> findTop5Readers();
 
     Optional<Reader> getReaderByID(String readerID);
 

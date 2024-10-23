@@ -17,9 +17,6 @@ public interface SpringDataReaderRepository extends ReaderRepository, ReaderRepo
     @Query(value = "SELECT * FROM Reader ORDER BY readerID DESC LIMIT 1", nativeQuery = true)
     Optional<Reader> findTopByOrderByReaderIDDesc();
 
-    @Override
-    @Query(value = "SELECT r FROM Reader r ORDER BY r.email DESC")
-    List<Reader> findTop5Readers();
 
     @Override
     @Query("SELECT r FROM Reader r WHERE r.readerID LIKE :readerID")
