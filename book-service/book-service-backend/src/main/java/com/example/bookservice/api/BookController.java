@@ -68,6 +68,17 @@ class BookController {
         return bookMapper.toBookView(books);
     }
 
+    @Operation(summary = "Get a specific book by ID")
+    @GetMapping(value = "/id/{id}")
+    public ResponseEntity<BookView> findById(
+            @PathVariable("id") @Parameter(description = "The ID of the book to find") final Long id) {
+        log.debug("Fetching book by ID: " + id);
+        final var book = bookService.getBookById(id).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Book not found"));
+
+        return ResponseEntity.ok().eTag(Long.toString(book.getVersion())).body(bookMapper.toBookView(book));
+    }
+
+
 
     @Operation(summary = "Get a specific book be title")
     @GetMapping(value = "/title/{title}")
