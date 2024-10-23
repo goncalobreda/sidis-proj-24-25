@@ -1,6 +1,7 @@
 package com.example.bookservice.service;
 
 import com.example.bookservice.model.Book;
+import com.example.bookservice.model.BookCountDTO;
 import com.example.bookservice.model.Genre;
 import com.example.bookservice.model.GenreBookCountDTO;
 import org.springframework.stereotype.Service;
@@ -31,7 +32,7 @@ public interface BookService {
 
     void addImageToBook(Long bookID, byte[] image, String contentType);
 
-    List<GenreBookCountDTO> findTop5Books();
+    List<BookCountDTO> findTop5Books();
 
     Optional<Book> getBookById(final Long bookID);
 

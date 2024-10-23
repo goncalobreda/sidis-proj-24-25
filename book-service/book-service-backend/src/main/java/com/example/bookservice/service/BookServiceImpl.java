@@ -171,7 +171,7 @@ public class BookServiceImpl implements BookService {
     }
 
     @Override
-    public List<GenreBookCountDTO> findTop5Books() {
+    public List<BookCountDTO> findTop5Books() {
         List<LendingDTO> lendings = lendingServiceClient.getAllLendings();
 
         Map<Long, Long> bookIdCounts = lendings.stream()
@@ -183,7 +183,7 @@ public class BookServiceImpl implements BookService {
                 .collect(Collectors.toList());
 
         return top5Books.stream()
-                .map(entry -> new GenreBookCountDTO(entry.getKey().toString(), entry.getValue()))
+                .map(entry -> new BookCountDTO(entry.getKey(), entry.getValue()))
                 .collect(Collectors.toList());
     }
 

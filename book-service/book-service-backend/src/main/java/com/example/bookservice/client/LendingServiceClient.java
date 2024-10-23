@@ -25,26 +25,33 @@ public class LendingServiceClient {
     }
 
     public List<LendingDTO> getAllLendings() {
-        // URLs para ambas as instâncias do serviço de empréstimo
-        String urlInstance1 = "http://localhost:8084/api/lendings"; // lending-service instance 1
-        String urlInstance2 = "http://localhost:8085/api/lendings"; // lending-service instance 2
+        String urlInstance1 = "http://localhost:8084/api/lendings";
+        String urlInstance2 = "http://localhost:8085/api/lendings";
 
         List<LendingDTO> allLendings = new ArrayList<>();
 
-        // Fetch lending records from instance 1
-        log.debug("Fetching lending records from lending-instance1-service");
-        List<LendingDTO> lendingsFromInstance1 = fetchLendingRecords(urlInstance1);
-        allLendings.addAll(lendingsFromInstance1);
+        try {
+            // Tente buscar da primeira instância
+            log.debug("Fetching lending records from lending-instance1-service");
+            List<LendingDTO> lendingsFromInstance1 = fetchLendingRecords(urlInstance1);
+            allLendings.addAll(lendingsFromInstance1);
+        } catch (Exception e) {
+            log.warn("Instance 1 unavailable, trying instance 2: " + e.getMessage());
 
-        // Fetch lending records from instance 2
-        log.debug("Fetching lending records from lending-instance2-service");
-        List<LendingDTO> lendingsFromInstance2 = fetchLendingRecords(urlInstance2);
-        allLendings.addAll(lendingsFromInstance2);
+            // Se falhar, tenta buscar da segunda instância
+            try {
+                log.debug("Fetching lending records from lending-instance2-service");
+                List<LendingDTO> lendingsFromInstance2 = fetchLendingRecords(urlInstance2);
+                allLendings.addAll(lendingsFromInstance2);
+            } catch (Exception ex) {
+                log.error("Both instances of lending-service are unavailable: " + ex.getMessage());
+                throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE, "Both instances of lending-service are unavailable");
+            }
+        }
 
         return allLendings;
     }
 
-    // Método auxiliar para buscar os empréstimos de uma URL específica
     private List<LendingDTO> fetchLendingRecords(String url) {
         ResponseEntity<LendingDTO[]> response = restTemplate.getForEntity(url, LendingDTO[].class);
 
