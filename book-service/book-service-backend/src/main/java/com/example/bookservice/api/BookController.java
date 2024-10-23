@@ -1,6 +1,7 @@
 package com.example.bookservice.api;
 
 import com.example.bookservice.model.Book;
+import com.example.bookservice.model.BookCountDTO;
 import com.example.bookservice.model.BookImage;
 import com.example.bookservice.model.GenreBookCountDTO;
 import com.example.bookservice.repositories.BookImageRepository;
@@ -191,7 +192,7 @@ class BookController {
 
     @Operation(summary = "Get top 5 books by number of lendings")
     @GetMapping("/top5Books")
-    public List<GenreBookCountDTO> getTop5Books() {
+    public List<BookCountDTO> getTop5Books() {
         return bookService.findTop5Books();
     }
 }
