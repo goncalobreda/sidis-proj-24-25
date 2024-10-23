@@ -78,12 +78,12 @@ public class BookServiceImpl implements BookService {
     @Override
     public boolean isBookIDUnique(Long bookID) {
         // Check if readerID already exists
-        return bookRepository.findById(bookID).isEmpty();
+        return bookRepository.findBookByBookID(bookID).isEmpty();
     }
 
     @Override
     public Optional<Book> getBookById(final Long bookID) {
-        return bookRepository.findById(bookID);
+        return bookRepository.findBookByBookID(bookID);
     }
 
     public List<Book> getAll() {
@@ -137,7 +137,7 @@ public class BookServiceImpl implements BookService {
     }
 
     public void addImageToBook(Long bookID, byte[] image, String contentType) {
-        Book book = bookRepository.findById(bookID)
+        Book book = bookRepository.findBookByBookID(bookID)
                 .orElseThrow(() -> new NotFoundException("Book not found"));
 
         saveBookWithImage(book, image, contentType);

@@ -70,7 +70,7 @@ class BookController {
 
     @Operation(summary = "Get a specific book by ID")
     @GetMapping(value = "/id/{id}")
-    public ResponseEntity<BookView> findById(
+    public ResponseEntity<BookView> findBookByBookID(
             @PathVariable("id") @Parameter(description = "The ID of the book to find") final Long id) {
         log.debug("Fetching book by ID: " + id);
         final var book = bookService.getBookById(id).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Book not found"));

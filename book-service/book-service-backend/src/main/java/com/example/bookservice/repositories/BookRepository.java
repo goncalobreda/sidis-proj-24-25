@@ -20,7 +20,7 @@ public interface BookRepository {
 
     Optional<Book> findByIsbn(String isbn);
 
-    Optional<Book> findById(Long bookID);
+    Optional<Book> findBookByBookID(Long bookID);
 
     Optional<Book> getLastId();
 
