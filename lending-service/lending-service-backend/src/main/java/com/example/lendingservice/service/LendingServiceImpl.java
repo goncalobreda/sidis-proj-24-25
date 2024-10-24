@@ -56,14 +56,13 @@ public class LendingServiceImpl implements LendingService {
         return lendingRepository.findFirstByOrderByLendingIDDesc();
     }
 
-    @Override
     public List<Lending> getOverdueLendingsSortedByTardiness() {
-        return lendingRepository.findByOverdueTrueOrderByExpectedReturnDateDesc(); // Usando o método correto
+        return lendingRepository.findByOverdueTrueOrderByTardinessDesc();
     }
 
     @Override
     public Lending create(CreateLendingRequest request) {
-        // Tenta buscar do book-service (instância 1 ou 2) usando a nova classe ExternalServiceHelper
+        // Tenta buscar o bookID do book-service usando a classe ExternalServiceHelper
         Long bookID = externalServiceHelper.getBookIDFromService(request.getBookID());
 
         // Separar o readerID em duas partes (id1 e id2)
@@ -72,8 +71,20 @@ public class LendingServiceImpl implements LendingService {
         String id1 = readerParts[0];
         String id2 = readerParts[1];
 
-        // Tenta buscar do reader-service (instância 1 ou 2) usando a nova classe ExternalServiceHelper
+        // Verificar se o readerID existe no reader-service usando a ExternalServiceHelper
         String readerIDResult = externalServiceHelper.getReaderIDFromService(id1, id2);
+
+        // Verificar se o leitor tem empréstimos em atraso
+        boolean hasOverdueLending = lendingRepository.existsByReaderIDAndOverdueTrue(readerIDResult);
+        if (hasOverdueLending) {
+            throw new IllegalArgumentException("Reader has overdue lending and cannot borrow more books.");
+        }
+
+        // Verificar se o leitor já tem 3 livros emprestados
+        long activeLendingsCount = lendingRepository.countActiveLendingsByReaderID(readerIDResult);
+        if (activeLendingsCount >= 3) {
+            throw new IllegalArgumentException("Reader already has the maximum number of active lendings (3).");
+        }
 
         // Criar o empréstimo com os dados obtidos
         LocalDate startDate = LocalDate.now();
@@ -83,7 +94,7 @@ public class LendingServiceImpl implements LendingService {
         lending.updateOverdueStatus();
         Lending savedLending = lendingRepository.save(lending); // Guardar na instância atual
 
-        // Sincronizar com a outra instância via HTTP POST
+        // Sincronizar com a outra instância via HTTP POST (se aplicável)
         String otherInstanceUrl = getOtherInstanceUrl();
         try {
             restTemplate.postForEntity(otherInstanceUrl + "/api/lendings/sync", savedLending, Lending.class);
@@ -91,8 +102,9 @@ public class LendingServiceImpl implements LendingService {
             System.err.println("Erro ao sincronizar o lending com a outra instância: " + e.getMessage());
         }
 
-        return savedLending; // Retornar o empréstimo criado
+        return savedLending;
     }
+
 
     // Método para determinar a URL da outra instância
     public String getOtherInstanceUrl() {
@@ -104,15 +116,7 @@ public class LendingServiceImpl implements LendingService {
     }
 
 
-    @Override
-    public void deleteLendingById(String lendingID) {
-        Optional<Lending> lending = lendingRepository.findByLendingID(lendingID);
-        if (lending.isPresent()) {
-            lendingRepository.delete(lending.get());
-        } else {
-            throw new NotFoundException("Lending not found with ID: " + lendingID);
-        }
-    }
+
 
     @Override
     public Lending partialUpdate(int id1, int id2, EditLendingRequest resource, long desiredVersion) {
@@ -120,6 +124,7 @@ public class LendingServiceImpl implements LendingService {
         Lending lending = lendingRepository.findByLendingID(lendingID)
                 .orElseThrow(() -> new NotFoundException("Lending not found."));
 
+        // Atualiza os campos modificados
         if (resource.getReturnDate() != null) {
             lending.setReturnDate(resource.getReturnDate());
             lending.updateOverdueStatus();
@@ -127,8 +132,20 @@ public class LendingServiceImpl implements LendingService {
         }
 
         lending.setNotes(resource.getNotes());
-        return lendingRepository.save(lending);
+        Lending updatedLending = lendingRepository.save(lending);
+
+        // Sincronizar com a outra instância via HTTP POST
+        String otherInstanceUrl = getOtherInstanceUrl();
+        try {
+            restTemplate.postForEntity(otherInstanceUrl + "/api/lendings/sync", updatedLending, Lending.class);
+        } catch (Exception e) {
+            System.err.println("Erro ao sincronizar o lending atualizado com a outra instância: " + e.getMessage());
+        }
+
+        return updatedLending;
     }
+
+
 
     @Override
     public int calculateFine(String lendingID) {
@@ -146,10 +163,6 @@ public class LendingServiceImpl implements LendingService {
         return 0;
     }
 
-    @Override
-    public Map<String, Double> getAverageLendingPerGenreForMonth(int month, int year) {
-        return new HashMap<>(); // Simulação até que a lógica de comunicação HTTP esteja implementada
-    }
 
     @Override
     public double getAverageLendingDuration() {
@@ -165,25 +178,44 @@ public class LendingServiceImpl implements LendingService {
         return (double) totalDays / lendings.size();
     }
 
-    @Override
-    public Map<String, Map<String, Long>> getLendingsPerMonthByGenreForLastYear() {
-        return new HashMap<>(); // Simulação até que a lógica de comunicação HTTP esteja implementada
-    }
+
 
     @Override
-    public long getLendingCountByReaderForMonth(String readerID, int month, int year) {
-        return 0; // Simulação até que a lógica de comunicação HTTP esteja implementada
+    public Map<String, Double> getAverageLendingsPerGenre(int month, int year) {
+        Map<String, Double> genreLendingAverage = new HashMap<>();
+        Map<String, Integer> genreCount = new HashMap<>();
+
+        // Obter os empréstimos para cada livro no mês/ano
+        List<Object[]> lendings = lendingRepository.findLendingsDurationByBookAndMonth(month, year);
+
+        // Total de empréstimos para o cálculo da média
+        int totalLendings = lendings.size();
+
+        // Iterar pelos resultados e buscar o género de cada livro através do serviço de livros
+        for (Object[] lending : lendings) {
+            Long bookID = (Long) lending[0];
+
+            // Fazer chamada HTTP para obter o género do livro
+            String genre = externalServiceHelper.getBookGenreFromService(bookID);
+
+            // Contar o número de empréstimos para cada género
+            genreCount.put(genre, genreCount.getOrDefault(genre, 0) + 1);
+        }
+
+        // Calcular a média de empréstimos por género
+        for (String genre : genreCount.keySet()) {
+            int count = genreCount.get(genre);
+            genreLendingAverage.put(genre, (double) count / totalLendings); // Média de empréstimos para o género
+        }
+
+        return genreLendingAverage;
     }
 
-    @Override
-    public Map<String, Double> getAverageLendingDurationPerGenre(int month, int year) {
-        return new HashMap<>(); // Simulação até que a lógica de comunicação HTTP esteja implementada
-    }
 
-    @Override
-    public Map<String, Double> getAverageLendingDurationPerBook() {
-        return new HashMap<>(); // Simulação até que a lógica de comunicação HTTP esteja implementada
-    }
+
+
+
+
 
 
 

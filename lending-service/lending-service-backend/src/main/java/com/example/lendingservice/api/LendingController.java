@@ -76,13 +76,7 @@ public class LendingController {
         return ResponseEntity.ok(lendingViews);
     }
 
-    @Operation(summary = "Gets the average number of lendings per genre for a certain month")
-    @GetMapping("/average-lending-per-genre")
-    public ResponseEntity<Map<String, Double>> getAverageLendingPerGenreForMonth(
-            @RequestParam int month, @RequestParam int year) {
-        Map<String, Double> statistics = service.getAverageLendingPerGenreForMonth(month, year);
-        return ResponseEntity.ok(statistics);
-    }
+
 
     @Operation(summary = "Gets the average lending duration")
     @GetMapping("/average-lending-duration")
@@ -91,55 +85,46 @@ public class LendingController {
         return ResponseEntity.ok(avgDuration);
     }
 
-    @Operation(summary = "Gets the number of lendings per month for the last 12 months, broken down by genre")
-    @GetMapping("/lendings-per-month-by-genre")
-    public ResponseEntity<Map<String, Map<String, Long>>> getLendingsPerMonthByGenreForLastYear() {
-        Map<String, Map<String, Long>> statistics = service.getLendingsPerMonthByGenreForLastYear();
-        return ResponseEntity.ok(statistics);
-    }
 
-    @Operation(summary = "Gets the number of lendings for a specific reader for a certain month")
-    @GetMapping("/lendings-per-reader")
-    public ResponseEntity<Long> getLendingCountByReaderForMonth(
-            @RequestParam String readerID, @RequestParam int month, @RequestParam int year) {
-        long lendingCount = service.getLendingCountByReaderForMonth(readerID, month, year);
-        return ResponseEntity.ok(lendingCount);
-    }
-
-    @Operation(summary = "Gets the average lending duration per genre for a specific month and year")
-    @GetMapping("/average-lending-duration-per-genre")
+    @Operation(summary = "Gets the average number of lending per genre of a certain month")
+    @GetMapping("/average-lending-per-genre")
     public ResponseEntity<Map<String, Double>> getAverageLendingDurationPerGenreAndMonth(
             @RequestParam int month, @RequestParam int year) {
-        Map<String, Double> result = service.getAverageLendingDurationPerGenre(month, year);
+        Map<String, Double> result = service.getAverageLendingsPerGenre(month, year);
         return ResponseEntity.ok(result);
     }
 
-    @Operation(summary = "Gets the average lending duration per book")
-    @GetMapping("/average-lending-duration-per-book")
-    public ResponseEntity<Map<String, Double>> getAverageLendingDurationPerBook() {
-        Map<String, Double> result = service.getAverageLendingDurationPerBook();
-        return ResponseEntity.ok(result);
-    }
+
 
     @PostMapping("/sync")
     public ResponseEntity<Lending> createLendingSync(@RequestBody Lending lending) {
-        lending.updateOverdueStatus();
-        Lending savedLending = lendingRepository.save(lending); // Guardar o empréstimo sincronizado
-        return ResponseEntity.ok(savedLending);
+        Optional<Lending> existingLending = lendingRepository.findByLendingID(lending.getLendingID());
+
+        if (existingLending.isPresent()) {
+            Lending existing = existingLending.get();
+            // Atualiza os campos modificados, sem validar a versão
+            existing.setBookID(lending.getBookID());
+            existing.setReaderID(lending.getReaderID());
+            existing.setStartDate(lending.getStartDate());
+            existing.setExpectedReturnDate(lending.getExpectedReturnDate());
+            existing.setReturnDate(lending.getReturnDate());
+            existing.setOverdue(lending.isOverdue());
+            existing.setFine(lending.getFine());
+            existing.setNotes(lending.getNotes());
+            lending.updateOverdueStatus();
+
+            // Desativa o controle de versão
+            existing.setVersion(lending.getVersion());
+
+            Lending updatedLending = lendingRepository.save(existing); // Atualiza a entidade
+            return ResponseEntity.ok(updatedLending);
+        } else {
+            // Se o empréstimo não existir, cria um novo
+            Lending savedLending = lendingRepository.save(lending);
+            return ResponseEntity.ok(savedLending);
+        }
     }
 
-
-
-    @DeleteMapping("/id/{id1}/{id2}")
-    public ResponseEntity<Void> deleteLending(
-            @PathVariable("id1") String id1,
-            @PathVariable("id2") String id2) {
-
-        String lendingID = id1 + "/" + id2;  // Combina o id1 e id2 para formar o lendingID completo
-        lendingService.deleteLendingById(lendingID);  // Chama o serviço para eliminar o lending
-
-        return ResponseEntity.noContent().build();  // Retorna uma resposta 204 No Content
-    }
 
 
 

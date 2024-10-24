@@ -42,9 +42,10 @@ public interface SpringDataLendingRepository extends CrudRepository<Lending, Lon
     @Query("SELECT l FROM Lending l WHERE l.overdue = true AND l.returnDate IS NULL ORDER BY FUNCTION('timestampdiff', DAY, l.expectedReturnDate, CURRENT_DATE) DESC")
     List<Lending> findByOverdueTrueOrderByTardinessDesc();
 
-    @Override
-    @Query("SELECT l.bookID, COUNT(l) FROM Lending l WHERE MONTH(l.startDate) = :month AND YEAR(l.startDate) = :year GROUP BY l.bookID")
-    List<Object[]> findLendingsCountByGenreAndMonth(@Param("month") int month, @Param("year") int year);
+    @Query("SELECT l.bookID, COUNT(l), TIMESTAMPDIFF(DAY, l.expectedReturnDate, CURRENT_DATE) FROM Lending l WHERE MONTH(l.startDate) = :month AND YEAR(l.startDate) = :year GROUP BY l.bookID")
+    List<Object[]> findLendingsDurationByBookAndMonth(@Param("month") int month, @Param("year") int year);
+
+
 
     @Override
     @Query("SELECT l FROM Lending l WHERE l.returnDate IS NOT NULL")

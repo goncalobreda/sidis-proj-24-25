@@ -65,4 +65,23 @@ public class ExternalServiceHelper {
             }
         }
     }
+
+    // Método para obter o género de um livro (instância 1 ou fallback para instância 2)
+    public String getBookGenreFromService(Long bookID) {
+        String bookServiceUrlInstance1 = bookInstance1Url + "/api/books/id/{id}";
+        String bookServiceUrlInstance2 = bookInstance2Url + "/api/books/id/{id}";
+        try {
+            ResponseEntity<BookResponse> bookResponse = restTemplate.getForEntity(bookServiceUrlInstance1, BookResponse.class, bookID);
+            return bookResponse.getBody().getGenre(); // Obter género da resposta
+        } catch (Exception e) {
+            System.err.println("Instância 1 do book-service indisponível, tentando instância 2: " + e.getMessage());
+            try {
+                ResponseEntity<BookResponse> bookResponse = restTemplate.getForEntity(bookServiceUrlInstance2, BookResponse.class, bookID);
+                return bookResponse.getBody().getGenre();
+            } catch (Exception ex) {
+                throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE, "Ambas as instâncias do book-service estão indisponíveis");
+            }
+        }
+    }
+
 }

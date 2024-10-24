@@ -28,7 +28,7 @@ public interface LendingRepository {
     boolean existsByReaderIDAndOverdueTrue(String readerID);
 
     List<Lending> findByOverdueTrueOrderByExpectedReturnDateDesc();
-    List<Object[]> findLendingsCountByGenreAndMonth(int month, int year);
+    List<Object[]> findLendingsDurationByBookAndMonth(int month, int year);
 
     Optional<Lending> findFirstByOrderByLendingIDDesc();
 
