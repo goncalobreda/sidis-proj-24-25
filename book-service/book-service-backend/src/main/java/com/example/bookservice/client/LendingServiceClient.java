@@ -3,6 +3,7 @@ package com.example.bookservice.client;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.http.ResponseEntity;
@@ -19,21 +20,25 @@ public class LendingServiceClient {
     private static final Logger log = LoggerFactory.getLogger(LendingServiceClient.class);
     private final RestTemplate restTemplate;
 
+    // Injetar URLs dinamicamente do application.properties
+    @Value("${lending.instance1.url}")
+    private String lendingInstance1Url;
+
+    @Value("${lending.instance2.url}")
+    private String lendingInstance2Url;
+
     @Autowired
     public LendingServiceClient(RestTemplate restTemplate) {
         this.restTemplate = restTemplate;
     }
 
     public List<LendingDTO> getAllLendings() {
-        String urlInstance1 = "http://localhost:8084/api/lendings";
-        String urlInstance2 = "http://localhost:8085/api/lendings";
-
         List<LendingDTO> allLendings = new ArrayList<>();
 
         try {
             // Tente buscar da primeira instância
             log.debug("Fetching lending records from lending-instance1-service");
-            List<LendingDTO> lendingsFromInstance1 = fetchLendingRecords(urlInstance1);
+            List<LendingDTO> lendingsFromInstance1 = fetchLendingRecords(lendingInstance1Url + "/api/lendings");
             allLendings.addAll(lendingsFromInstance1);
         } catch (Exception e) {
             log.warn("Instance 1 unavailable, trying instance 2: " + e.getMessage());
@@ -41,7 +46,7 @@ public class LendingServiceClient {
             // Se falhar, tenta buscar da segunda instância
             try {
                 log.debug("Fetching lending records from lending-instance2-service");
-                List<LendingDTO> lendingsFromInstance2 = fetchLendingRecords(urlInstance2);
+                List<LendingDTO> lendingsFromInstance2 = fetchLendingRecords(lendingInstance2Url + "/api/lendings");
                 allLendings.addAll(lendingsFromInstance2);
             } catch (Exception ex) {
                 log.error("Both instances of lending-service are unavailable: " + ex.getMessage());

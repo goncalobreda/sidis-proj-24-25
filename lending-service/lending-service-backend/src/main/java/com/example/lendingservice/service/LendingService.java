@@ -10,6 +10,7 @@ public interface LendingService {
 
     Iterable<Lending> findAll();
     Optional<Lending> findById(int id1, int id2);
+    String getOtherInstanceUrl();
 
     Optional<String> findReaderByLendingID(String lendingID);  // Retorna apenas o ID do Reader
     Optional<Lending> getLastId();

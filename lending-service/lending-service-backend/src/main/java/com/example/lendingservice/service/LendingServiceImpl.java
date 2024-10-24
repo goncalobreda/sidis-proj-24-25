@@ -6,6 +6,7 @@ import com.example.lendingservice.exceptions.NotFoundException;
 import com.example.lendingservice.model.Lending;
 import com.example.lendingservice.repositories.LendingRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
@@ -21,6 +22,17 @@ public class LendingServiceImpl implements LendingService {
     private LendingRepository lendingRepository;
     @Autowired
     private RestTemplate restTemplate;
+    @Autowired
+    private ExternalServiceHelper externalServiceHelper;
+
+    @Value("${server.port}")
+    private String currentPort; // Porta da instância atual
+
+    @Value("${lending.instance1.url}")
+    private String lendingInstance1Url;
+
+    @Value("${lending.instance2.url}")
+    private String lendingInstance2Url;
 
     @Override
     public Iterable<Lending> findAll() {
@@ -51,10 +63,8 @@ public class LendingServiceImpl implements LendingService {
 
     @Override
     public Lending create(CreateLendingRequest request) {
-        // Fazer o HTTP GET para obter o bookID do book-service (instância 1 na porta 8082)
-        String bookServiceUrl = "http://localhost:8082/api/books/id/{id}";
-        ResponseEntity<BookResponse> bookResponse = restTemplate.getForEntity(bookServiceUrl, BookResponse.class, request.getBookID());
-        Long bookID = bookResponse.getBody().getBookID(); // Obter bookID da resposta
+        // Tenta buscar do book-service (instância 1 ou 2) usando a nova classe ExternalServiceHelper
+        Long bookID = externalServiceHelper.getBookIDFromService(request.getBookID());
 
         // Separar o readerID em duas partes (id1 e id2)
         String readerID = request.getReaderID(); // Exemplo: "2024/3"
@@ -62,10 +72,8 @@ public class LendingServiceImpl implements LendingService {
         String id1 = readerParts[0];
         String id2 = readerParts[1];
 
-        // Fazer o HTTP GET para obter o readerID do reader-service (instância 1 na porta 8086)
-        String readerServiceUrl = "http://localhost:8086/api/readers/id/{id1}/{id2}";
-        ResponseEntity<ReaderResponse> readerResponse = restTemplate.getForEntity(readerServiceUrl, ReaderResponse.class, id1, id2);
-        String readerIDResult = readerResponse.getBody().getReaderID(); // Obter readerID da resposta
+        // Tenta buscar do reader-service (instância 1 ou 2) usando a nova classe ExternalServiceHelper
+        String readerIDResult = externalServiceHelper.getReaderIDFromService(id1, id2);
 
         // Criar o empréstimo com os dados obtidos
         LocalDate startDate = LocalDate.now();
@@ -73,18 +81,28 @@ public class LendingServiceImpl implements LendingService {
 
         Lending lending = new Lending(bookID, readerIDResult, startDate, null, expectedReturnDate, false, 0);
         lending.updateOverdueStatus();
-        Lending savedLending = lendingRepository.save(lending); // Guardar na instância 1
+        Lending savedLending = lendingRepository.save(lending); // Guardar na instância atual
 
-        // Sincronizar com a instância 2 via HTTP POST (porta 8085)
-        String lendingServiceUrlInstance2 = "http://localhost:8085/api/lendings/sync";
+        // Sincronizar com a outra instância via HTTP POST
+        String otherInstanceUrl = getOtherInstanceUrl();
         try {
-            restTemplate.postForEntity(lendingServiceUrlInstance2, savedLending, Lending.class);
+            restTemplate.postForEntity(otherInstanceUrl + "/api/lendings/sync", savedLending, Lending.class);
         } catch (Exception e) {
-            System.err.println("Erro ao sincronizar o lending com a instância 2: " + e.getMessage());
+            System.err.println("Erro ao sincronizar o lending com a outra instância: " + e.getMessage());
         }
 
         return savedLending; // Retornar o empréstimo criado
     }
+
+    // Método para determinar a URL da outra instância
+    public String getOtherInstanceUrl() {
+        if (currentPort.equals("8084")) {
+            return lendingInstance2Url; // Se estiver na instância 1, sincroniza com a instância 2
+        } else {
+            return lendingInstance1Url; // Se estiver na instância 2, sincroniza com a instância 1
+        }
+    }
+
 
     @Override
     public void deleteLendingById(String lendingID) {
@@ -95,8 +113,6 @@ public class LendingServiceImpl implements LendingService {
             throw new NotFoundException("Lending not found with ID: " + lendingID);
         }
     }
-
-
 
     @Override
     public Lending partialUpdate(int id1, int id2, EditLendingRequest resource, long desiredVersion) {
