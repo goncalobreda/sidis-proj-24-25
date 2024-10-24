@@ -1,9 +1,6 @@
 package com.example.readerservice.service;
 
-import com.example.readerservice.api.ReaderView;
-import com.example.readerservice.api.ReaderViewMapper;
-import com.example.readerservice.client.LendingDTO;
-import com.example.readerservice.client.LendingServiceClient;
+import com.example.readerservice.client.*;
 import com.example.readerservice.exceptions.ConflictException;
 import com.example.readerservice.exceptions.NotFoundException;
 import com.example.readerservice.model.Reader;
@@ -12,10 +9,7 @@ import com.example.readerservice.repositories.ReaderRepository;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -23,15 +17,15 @@ public class ReaderServiceImpl implements ReaderService {
 
     private final ReaderRepository readerRepository;
     private final EditReaderMapper editReaderMapper;
-    private LendingServiceClient lendingServiceClient;
-    private ReaderViewMapper readerViewMapper;
+    private final LendingServiceClient lendingServiceClient;
+    private final BookServiceClient bookServiceClient;
 
 
-    public ReaderServiceImpl(ReaderRepository readerRepository, EditReaderMapper editReaderMapper, LendingServiceClient lendingServiceClient, ReaderViewMapper readerViewMapper) {
+    public ReaderServiceImpl(ReaderRepository readerRepository, EditReaderMapper editReaderMapper, LendingServiceClient lendingServiceClient, BookServiceClient bookServiceClient) {
         this.readerRepository = readerRepository;
         this.editReaderMapper = editReaderMapper;
         this.lendingServiceClient = lendingServiceClient;
-        this.readerViewMapper = readerViewMapper;
+        this.bookServiceClient = bookServiceClient;
     }
 
     @Override
@@ -86,11 +80,6 @@ public class ReaderServiceImpl implements ReaderService {
     @Override
     public List<Reader> getReaderByName(final String name) {
         return readerRepository.findByName(name);
-    }
-
-    @Override
-    public Set<String> getInterestsByReader(Reader reader) {
-        return reader.getInterests();
     }
 
     public List<Reader> searchReaders(Page page, SearchReadersQuery query) {
@@ -158,6 +147,23 @@ public class ReaderServiceImpl implements ReaderService {
         return top5Readers.stream()
                 .map(entry -> new ReaderCountDTO(entry.getKey(), entry.getValue()))
                 .collect(Collectors.toList());
+    }
+
+
+    public List<GenreDTO> getBookSuggestions(Reader reader) {
+        Set<String> interests = getInterestsByReader(reader);
+        List<GenreDTO> suggestions = new ArrayList<>();
+
+        for (String interest : interests) {
+            suggestions.addAll(bookServiceClient.getBooksByGenre(interest));
+        }
+
+        return suggestions;
+    }
+
+    public Set<String> getInterestsByReader(Reader reader) {
+        return reader.getInterests();
+
     }
 
 

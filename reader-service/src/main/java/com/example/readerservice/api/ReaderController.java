@@ -1,8 +1,11 @@
 package com.example.readerservice.api;
 
+import com.example.readerservice.client.BookDTO;
+import com.example.readerservice.client.GenreDTO;
 import com.example.readerservice.exceptions.NotFoundException;
 import com.example.readerservice.model.Reader;
 import com.example.readerservice.model.ReaderCountDTO;
+import com.example.readerservice.repositories.ReaderRepository;
 import com.example.readerservice.service.EditReaderRequest;
 import com.example.readerservice.service.ReaderServiceImpl;
 import com.example.readerservice.service.SearchReadersQuery;
@@ -17,12 +20,16 @@ import jakarta.validation.Valid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.awt.print.Book;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 @Tag(name = "Readers", description = "Endpoints for managing readers")
 @RestController
@@ -34,11 +41,13 @@ class ReaderController {
 
     private final ReaderServiceImpl readerService;
     private final ReaderViewMapper readerMapper;
+    private final ReaderRepository readerRepository;
 
     @Autowired
-    public ReaderController(ReaderServiceImpl readerService, ReaderViewMapper readerMapper) {
+    public ReaderController(ReaderServiceImpl readerService, ReaderViewMapper readerMapper, ReaderRepository readerRepo) {
         this.readerService = readerService;
         this.readerMapper = readerMapper;
+        this.readerRepository = readerRepo;
     }
 
     @Operation(summary = "Gets all readers")
@@ -96,4 +105,50 @@ class ReaderController {
     public List<ReaderCountDTO> getTop5Readers() {
         return readerService.findTop5Readers();
     }
+
+    @Operation(summary = "Get a Reader by name")
+    @GetMapping(value = "/name/{name}")
+    public List<ReaderView> findByName(
+            @PathVariable("name") @Parameter(description = "The name of the Reader to find") final String name) {
+        System.out.println("apiBookTitle");
+        final var reader = readerService.getReaderByName(name);
+        if (reader.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Reader not found!");
+        }
+
+        return readerMapper.toReaderView(reader);
+    }
+
+    @Operation(summary = "Gets book suggestions based on the list of interests of the Reader")
+    @GetMapping(value = "/suggestions/{id1}/{id2}")
+    public List<GenreDTO> findSuggestions(@PathVariable("id1") final String id1, @PathVariable("id2") final String id2) {
+        String readerID = id1 + "/" + id2;
+        Reader reader = readerService.getReaderByID(readerID).orElseThrow(() -> new NotFoundException(Reader.class, readerID));
+
+        return readerService.getBookSuggestions(reader);
+    }
+
+    @PatchMapping("/readers/{id1}/{id2}/interests")
+    public ResponseEntity<ReaderView> updateInterests(
+            @PathVariable("id1") String id1,
+            @PathVariable("id2") String id2,
+            @RequestBody Set<String> newInterests) {
+
+        // Concatena o id1 e o id2 para formar o readerID
+        String readerID = id1 + "/" + id2;
+
+        // Busca o reader com o readerID completo (ano/counter)
+        Reader reader = readerService.getReaderByID(readerID)
+                .orElseThrow(() -> new NotFoundException(Reader.class, readerID));
+
+        // Adiciona os novos interesses ao leitor
+        reader.addInterests(newInterests);
+
+        // Salva o reader atualizado
+        readerRepository.save(reader);
+
+        // Retorna o reader atualizado na resposta
+        return ResponseEntity.ok(readerMapper.toReaderView(reader));
+    }
+
 }

@@ -18,6 +18,7 @@ public interface ReaderService {
 
     Reader partialUpdate(String readerID, EditReaderRequest request, long parseLong);
 
+    Set<String> getInterestsByReader(Reader reader);
 
     List<ReaderCountDTO> findTop5Readers();
 
@@ -26,8 +27,6 @@ public interface ReaderService {
     Optional<Reader> getReaderByEmail(String email);
 
     List<Reader> getReaderByName(final String name);
-
-    Set<String> getInterestsByReader(Reader reader);
 
     List<Reader> searchReaders(Page page, com.example.readerservice.service.SearchReadersQuery query);
 }

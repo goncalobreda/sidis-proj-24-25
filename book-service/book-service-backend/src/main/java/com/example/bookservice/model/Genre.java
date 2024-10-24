@@ -2,6 +2,7 @@ package com.example.bookservice.model;
 
 import jakarta.persistence.*;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Entity
@@ -28,7 +29,10 @@ public class Genre {
             cascade = CascadeType.ALL)
     private List<Book> books;
 
-    public Genre(String interest) {this.interest = interest;}
+    public Genre(String interest) {
+        this.interest = interest;
+        this.books = new ArrayList<>();
+    }
 
     public Genre() {}
 

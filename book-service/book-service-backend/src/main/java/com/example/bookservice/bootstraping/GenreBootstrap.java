@@ -13,7 +13,7 @@ import java.util.List;
 
 @Component
 @RequiredArgsConstructor
-@Profile("bootstrap")
+//@Profile("bootstrap")
 @Order(2)
 public class GenreBootstrap implements CommandLineRunner {
 

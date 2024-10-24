@@ -1,5 +1,6 @@
 package com.example.bookservice.client;
 
+import com.example.bookservice.model.Book;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,6 +14,7 @@ import org.springframework.web.server.ResponseStatusException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 public class LendingServiceClient {
@@ -20,12 +22,21 @@ public class LendingServiceClient {
     private static final Logger log = LoggerFactory.getLogger(LendingServiceClient.class);
     private final RestTemplate restTemplate;
 
-    // Injetar URLs dinamicamente do application.properties
+    // URLs das outras instâncias
     @Value("${lending.instance1.url}")
     private String lendingInstance1Url;
 
     @Value("${lending.instance2.url}")
     private String lendingInstance2Url;
+
+    @Value("${book.instance1.url}")
+    private String bookInstance1Url;
+
+    @Value("${book.instance2.url}")
+    private String bookInstance2Url;
+
+    @Value("${server.port}")
+    private String currentPort;
 
     @Autowired
     public LendingServiceClient(RestTemplate restTemplate) {
@@ -64,6 +75,24 @@ public class LendingServiceClient {
             return Arrays.asList(response.getBody());
         } else {
             throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE, "Unable to fetch lending records from " + url);
+        }
+    }
+
+
+    public Optional<Book> getBookFromOtherInstance(Long bookID) {
+        try {
+            log.debug("Pergunta à instância 1 se o book existe " + bookID);
+            ResponseEntity<Book> response = restTemplate.getForEntity(bookInstance1Url + "/api/books/id/" + bookID, Book.class);
+
+            if (response.getStatusCode() == HttpStatus.OK) {
+                return Optional.ofNullable(response.getBody());
+            } else {
+                log.warn("Book ID " + bookID + " não encontrado.");
+                return Optional.empty();
+            }
+        } catch (Exception e) {
+            log.error("Erro na procura do livro na instância 2: " + e.getMessage());
+            return Optional.empty();
         }
     }
 }
