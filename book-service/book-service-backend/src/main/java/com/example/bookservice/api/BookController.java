@@ -5,6 +5,7 @@ import com.example.bookservice.model.BookCountDTO;
 import com.example.bookservice.model.BookImage;
 import com.example.bookservice.model.GenreBookCountDTO;
 import com.example.bookservice.repositories.BookImageRepository;
+import com.example.bookservice.repositories.BookRepository;
 import com.example.bookservice.service.BookServiceImpl;
 import com.example.bookservice.service.EditBookRequest;
 import com.example.bookservice.api.BookViewMapper;
@@ -34,6 +35,7 @@ import org.springframework.web.server.ResponseStatusException;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import static org.springframework.http.HttpHeaders.IF_MATCH;
 
@@ -46,15 +48,18 @@ class BookController {
     private static final Logger log = LoggerFactory.getLogger(BookController.class);
     private final BookServiceImpl bookService;
 
+    private final BookRepository bookRepository;
+
     private final BookViewMapper bookMapper;
 
     private final BookImageRepository bookImageRepo;
 
     @Autowired
-    public BookController(BookServiceImpl bookService, BookViewMapper bookMapper, BookImageRepository bookImageRepo) {
+    public BookController(BookServiceImpl bookService, BookViewMapper bookMapper, BookImageRepository bookImageRepo, BookRepository bookRepository) {
         this.bookService = bookService;
         this.bookMapper = bookMapper;
         this.bookImageRepo = bookImageRepo;
+        this.bookRepository = bookRepository;
     }
 
     @Operation(summary = "Get a specific book by genre")
@@ -168,6 +173,8 @@ class BookController {
         Book createdBook = bookService.create(request);
         return ResponseEntity.ok(bookMapper.toBookView(createdBook));
     }
+
+
 
 
     @PatchMapping(value = "/{bookID}")
