@@ -105,12 +105,16 @@ public class SecurityConfig {
                 exceptions -> exceptions.authenticationEntryPoint(new BearerTokenAuthenticationEntryPoint())
                         .accessDeniedHandler(new BearerTokenAccessDeniedHandler()));
 
+        http.headers(headers -> headers.frameOptions().sameOrigin()); // Para permitir frames da mesma origem
+
+
         // Set permissions on endpoints
         http.authorizeHttpRequests()
                 // Swagger endpoints
                 .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
                 // H2 console
                 .requestMatchers("/h2-console/**").permitAll()
+
 
 
 
@@ -138,6 +142,7 @@ public class SecurityConfig {
 
 
                 .anyRequest().authenticated()
+
                 // Set up oauth2 resource server
                 .and().httpBasic(Customizer.withDefaults()).oauth2ResourceServer().jwt();
 
