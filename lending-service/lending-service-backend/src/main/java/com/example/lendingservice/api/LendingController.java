@@ -113,7 +113,6 @@ public class LendingController {
             existing.setNotes(lending.getNotes());
             lending.updateOverdueStatus();
 
-            // Desativa o controle de versão
             existing.setVersion(lending.getVersion());
 
             Lending updatedLending = lendingRepository.save(existing); // Atualiza a entidade
