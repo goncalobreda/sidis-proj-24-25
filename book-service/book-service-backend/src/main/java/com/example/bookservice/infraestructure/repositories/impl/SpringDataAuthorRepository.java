@@ -14,6 +14,10 @@ import java.util.Optional;
 public interface SpringDataAuthorRepository extends AuthorRepository, CrudRepository<Author, Long> {
 
     @Override
+    @Query("SELECT a FROM Author a")
+    List<Author> findAll();
+
+    @Override
     @Query("SELECT a FROM Author a WHERE LOWER(a.name) LIKE LOWER(CONCAT('%', :name, '%'))")
     List<Author> findByName(@Param("name") String name);
 
@@ -31,6 +35,9 @@ public interface SpringDataAuthorRepository extends AuthorRepository, CrudReposi
     @Query("SELECT b FROM Book b JOIN b.author a WHERE a = :author")
     List<Book> findByAuthorsContaining(@Param("author") Author author);
 
+    @Override
+    @Query(value = "SELECT * FROM Author ORDER BY authorID DESC LIMIT 1", nativeQuery = true)
+    Optional<Author> findFirstByOrderByAuthorIDDesc();
 
 }
 

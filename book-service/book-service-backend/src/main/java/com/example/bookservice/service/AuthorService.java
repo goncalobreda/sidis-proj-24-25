@@ -1,11 +1,8 @@
 package com.example.bookservice.service;
 
-import com.example.bookservice.model.Author;
-import com.example.bookservice.model.CoAuthorDTO;
-import com.example.bookservice.model.Book;
+import com.example.bookservice.model.*;
 
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 
 public interface AuthorService {
@@ -20,5 +17,7 @@ public interface AuthorService {
 
     List<CoAuthorDTO> getCoAuthorsAndBooks(String authorId);
 
+    Optional<Author> getLastId();
 
+    Optional<AuthorDTO> getAuthorAndBooks(String authorId);
 }

@@ -22,7 +22,10 @@ public interface AuthorRepository {
 
     Optional<Author> findTopByOrderByAuthorIDDesc();
 
-
     List<Book> findByAuthorsContaining(Author author);
+
+    Optional<Author>findFirstByOrderByAuthorIDDesc();
+
+    List<Author> findAll();
 
 }

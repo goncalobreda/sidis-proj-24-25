@@ -1,13 +1,9 @@
 package com.example.bookservice.api;
 
-import com.example.bookservice.model.Author;
-import com.example.bookservice.model.AuthorImage;
-import com.example.bookservice.model.CoAuthorDTO;
-import com.example.bookservice.model.TopAuthorLendingDTO;
+import com.example.bookservice.model.*;
 import com.example.bookservice.service.AuthorServiceImpl;
 import com.example.bookservice.service.CreateAuthorRequest;
 import com.example.bookservice.service.EditAuthorRequest;
-import com.example.bookservice.api.BookViewMapper;
 import com.example.bookservice.service.BookServiceImpl;
 import com.example.bookservice.exceptions.NotFoundException;
 
@@ -15,27 +11,18 @@ import com.example.bookservice.exceptions.NotFoundException;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.core.io.Resource;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.context.request.WebRequest;
-import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
-import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
-import java.io.IOException;
-import java.net.URI;
-import java.net.URISyntaxException;
 import java.util.List;
-import java.util.Map;
+import java.util.Optional;
 
 
 @Tag(name = "Authors", description = "Endpoints for managing Authors")
@@ -131,6 +118,19 @@ public class AuthorController {
 
         List<CoAuthorDTO> coAuthors = authorService.getCoAuthorsAndBooks(authorId);
         return ResponseEntity.ok(coAuthors);
+    }
+
+    @Operation(summary = "Get author and their books by divided ID")
+    @GetMapping("/{id1}/{id2}/books")
+    public ResponseEntity<Optional<AuthorDTO>> getAuthorAndBooks(@PathVariable String id1, @PathVariable String id2) {
+        // Concatena os IDs para formar o authorId completo
+        String authorId = id1 + "/" + id2;
+
+        // Chama o serviço para obter o autor e seus livros
+        Optional<AuthorDTO> author = authorService.getAuthorAndBooks(authorId);
+
+        // Retorna a resposta com o AuthorDTO no corpo
+        return ResponseEntity.ok(author);
     }
 
     @GetMapping("/top5Authors")

@@ -2,17 +2,13 @@ package com.example.bookservice.service;
 
 import com.example.bookservice.client.LendingDTO;
 import com.example.bookservice.client.LendingServiceClient;
-import com.example.bookservice.model.Author;
-import com.example.bookservice.model.CoAuthorDTO;
-import com.example.bookservice.model.TopAuthorLendingDTO;
+import com.example.bookservice.model.*;
 import com.example.bookservice.repositories.AuthorRepository;
-import com.example.bookservice.model.Book;
 import com.example.bookservice.repositories.BookRepository;
 import com.example.bookservice.exceptions.NotFoundException;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.transaction.annotation.Transactional;
 
-import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
@@ -105,7 +101,23 @@ public class AuthorServiceImpl implements AuthorService {
                 .collect(Collectors.toList());
     }
 
+    @Override
+    public Optional<AuthorDTO> getAuthorAndBooks(String authorId) {
+        Optional<Author> authorOpt = authorRepository.findByAuthorID(authorId);
+        if (authorOpt.isEmpty()) {
+            throw new EntityNotFoundException("Author not found");
+        }
 
+        Author author = authorOpt.get();
+
+        // Mapeia os livros do autor para BookDTO
+        List<BookDTO> bookDTOs = authorRepository.findByAuthorsContaining(author).stream()
+                .map(book -> new BookDTO(book))
+                .collect(Collectors.toList());
+
+        // Retorna um AuthorDTO contendo as informações do autor e a lista de BookDTOs
+        return Optional.of(new AuthorDTO(author.getAuthorID(), author.getName(), bookDTOs));
+    }
 
     public String getAuthorImageUrl(String authorID) {
         Author author = findByAuthorID(authorID).orElseThrow(() -> new NotFoundException(Author.class, authorID));
@@ -152,5 +164,10 @@ public class AuthorServiceImpl implements AuthorService {
         return top5Authors.stream()
                 .map(entry -> new TopAuthorLendingDTO(entry.getKey().getAuthorID(), entry.getKey().getName(), entry.getValue()))
                 .collect(Collectors.toList());
+    }
+
+    @Override
+    public Optional<Author> getLastId() {
+        return authorRepository.findFirstByOrderByAuthorIDDesc();
     }
 }

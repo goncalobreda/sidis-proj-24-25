@@ -95,20 +95,14 @@ public class SecurityConfig {
 
         // Our public endpoints
                 .requestMatchers("/api/public/**").permitAll() // public assets & end-points
-                .requestMatchers(HttpMethod.GET, "/api/readers/**").permitAll() // read-only for librarians
-                .requestMatchers(HttpMethod.GET, "/api/authors/**").permitAll() // read-only authors
-                .requestMatchers(HttpMethod.GET, "/api/books/**").hasRole(Role.LIBRARIAN) // read-only books
-                .requestMatchers(HttpMethod.GET, "/api/lendings/**").permitAll() // read-only lendings
+                .requestMatchers(HttpMethod.GET, "/api/readers/id/{id1}/{id2}").hasRole(Role.LIBRARIAN) // read-only for librarians
+                .requestMatchers(HttpMethod.GET, "/api/readers/name/{name}").hasRole(Role.LIBRARIAN) // read-only for librarians
+                .requestMatchers(HttpMethod.GET, "/api/readers/top5Readers").hasRole(Role.LIBRARIAN) // read-only for librarians
+                .requestMatchers(HttpMethod.GET, "/api/readers/email/{email}").hasRole(Role.LIBRARIAN) // read-only for librarians
 
-                .requestMatchers(HttpMethod.POST, "/api/readers/**").permitAll() // search-only readers
-                .requestMatchers(HttpMethod.POST, "/api/authors/**").permitAll() // read-only authors
-                .requestMatchers(HttpMethod.POST, "/api/books/**").permitAll() // read-only books
-                .requestMatchers(HttpMethod.POST, "/api/lendings/**").permitAll() // read-only lendings
+                .requestMatchers(HttpMethod.PATCH, "/api/readers/{id1}/{id2}").hasRole(Role.READER) // edit-only readers
+                .requestMatchers(HttpMethod.PATCH, "/api/readers/readers/{id1}/{id2}/interests").hasRole(Role.READER) // read-only for librarians
 
-                .requestMatchers(HttpMethod.PATCH, "/api/readers/**").permitAll() // edit-only readers
-                .requestMatchers(HttpMethod.PATCH, "/api/authors/**").permitAll() // read-only authors
-                .requestMatchers(HttpMethod.PATCH, "/api/books/**").permitAll() // read-only books
-                .requestMatchers(HttpMethod.PATCH, "/api/lendings/**").permitAll() // read-only lendings
 
 
                 // Our private endpoints

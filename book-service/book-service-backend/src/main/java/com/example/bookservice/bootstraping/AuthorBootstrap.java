@@ -24,58 +24,59 @@ public class AuthorBootstrap implements CommandLineRunner {
     @Override
     @Transactional
     public void run(final String... args) throws Exception {
-        System.out.println("auBt.run");
+        System.out.println("AuthorBootstrap.run");
 
-        final Optional<Author> a = authorRepo.findTopByOrderByAuthorIDDesc();
-        if (a.isPresent()) {
-            System.out.println("Last authorID is " + a.get().getAuthorID());
-            a.get().initCounter(a.get().getAuthorID());
+        // Verificar o último ID de autor para inicializar o contador, se necessário
+        final Optional<Author> lastAuthor = authorRepo.findTopByOrderByAuthorIDDesc();
+        lastAuthor.ifPresent(author -> {
+            System.out.println("Last authorID is " + author.getAuthorID());
+            author.initCounter(author.getAuthorID());
+        });
+
+        // Adicionar autores individualmente, com verificação de existência
+        addAuthors();
+        System.out.println("AuthorBootstrap completed\n");
+    }
+
+    private void addAuthors() {
+        addAuthorIfNotExists("William Shakespeare", "England, 1564-1616");
+        addAuthorIfNotExists("Jane Austen", "England, 1775-1817");
+        addAuthorIfNotExists("Fernando Pessoa", "Portugal, 1888-1935");
+        addAuthorIfNotExists("Mark Twain", "United States, 1835-1910");
+        addAuthorIfNotExists("Leo Tolstoy", "Russia, 1828-1910");
+        addAuthorIfNotExists("Charles Dickens", "England, 1812-1870");
+        addAuthorIfNotExists("Sophia de Mello Breyner Andresen", "Portugal, 1919-2004");
+        addAuthorIfNotExists("Homer", "Ancient Greece, c. 8th century BC");
+        addAuthorIfNotExists("Gabriel Garcia Marquez", "Colombia, 1927-2014");
+        addAuthorIfNotExists("Franz Kafka", "Austria-Hungary, 1883-1924");
+        addAuthorIfNotExists("George Orwell", "India (British Raj), 1903-1950");
+        addAuthorIfNotExists("Fyodor Dostoevsky", "Russia, 1821-1881");
+        addAuthorIfNotExists("Herman Melville", "United States, 1819-1891");
+        addAuthorIfNotExists("José Saramago", "Portugal, 1922-2010");
+        addAuthorIfNotExists("Virginia Woolf", "England, 1882-1941");
+        addAuthorIfNotExists("James Joyce", "Ireland, 1882-1941");
+        addAuthorIfNotExists("Marcel Proust", "France, 1871-1922");
+        addAuthorIfNotExists("Ernest Hemingway", "United States, 1899-1961");
+        addAuthorIfNotExists("Eça de Queirós", "Portugal, 1845-1900");
+        addAuthorIfNotExists("Camilo Castelo Branco", "Portugal, 1825-1890");
+        addAuthorIfNotExists("Miguel Torga", "Portugal, 1907-1995");
+        addAuthorIfNotExists("Antero de Quental", "Portugal, 1842-1891");
+        addAuthorIfNotExists("Almeida Garrett", "Portugal, 1799-1854");
+        addAuthorIfNotExists("Florbela Espanca", "Portugal, 1894-1930");
+        addAuthorIfNotExists("António Lobo Antunes", "Portugal, 1942-");
+        addAuthorIfNotExists("Agustina Bessa-Luís", "Portugal, 1922-2019");
+        addAuthorIfNotExists("Luís de Camões", "Portugal, 1524-1580");
+        addAuthorIfNotExists("Alexandre Herculano", "Portugal, 1810-1877");
+        addAuthorIfNotExists("Vergílio Ferreira", "Portugal, 1916-1996");
+    }
+
+    private void addAuthorIfNotExists(final String name, final String biography) {
+        if (authorRepo.findByNameAndBiography(name, biography).isEmpty()) {
+            Author author = new Author(name, biography);
+            authorRepo.save(author);
+            System.out.println("Author " + name + " added successfully.");
+        } else {
+            System.out.println("Author " + name + " already exists in the database.");
         }
-
-        addAuthorIndividually();
-        System.out.println("auBt.a4.exit\n");
-    }
-
-
-    private void addAuthorIndividually() {
-        addAuthor("William Shakespeare", "England, 1564-1616");
-        addAuthor("Jane Austen", "England, 1775-1817");
-        addAuthor("Fernando Pessoa", "Portugal, 1888-1935");
-        addAuthor("Mark Twain", "United States, 1835-1910");
-        addAuthor("Leo Tolstoy", "Russia, 1828-1910");
-        addAuthor("Charles Dickens", "England, 1812-1870");
-        addAuthor("Sophia de Mello Breyner Andresen", "Portugal, 1919-2004");
-        addAuthor("Homer", "Ancient Greece, c. 8th century BC");
-        addAuthor("Gabriel Garcia Marquez", "Colombia, 1927-2014");
-        addAuthor("Franz Kafka", "Austria-Hungary, 1883-1924");
-        addAuthor("George Orwell", "India (British Raj), 1903-1950");
-        addAuthor("Fyodor Dostoevsky", "Russia, 1821-1881");
-        addAuthor("Herman Melville", "United States, 1819-1891");
-        addAuthor("José Saramago", "Portugal, 1922-2010");
-        addAuthor("Virginia Woolf", "England, 1882-1941");
-        addAuthor("James Joyce", "Ireland, 1882-1941");
-        addAuthor("Marcel Proust", "France, 1871-1922");
-        addAuthor("Ernest Hemingway", "United States, 1899-1961");
-        addAuthor("Eça de Queirós", "Portugal, 1845-1900");
-        addAuthor("Camilo Castelo Branco", "Portugal, 1825-1890");
-        addAuthor("Miguel Torga", "Portugal, 1907-1995");
-        addAuthor("Antero de Quental", "Portugal, 1842-1891");
-        addAuthor("Almeida Garrett", "Portugal, 1799-1854");
-        addAuthor("Florbela Espanca", "Portugal, 1894-1930");
-        addAuthor("António Lobo Antunes", "Portugal, 1942-");
-        addAuthor("Agustina Bessa-Luís", "Portugal, 1922-2019");
-        addAuthor("Luís de Camões", "Portugal, 1524-1580");
-        addAuthor("Alexandre Herculano", "Portugal, 1810-1877");
-        addAuthor("Vergílio Ferreira", "Portugal, 1916-1996");
-
-    }
-
-
-    private void addAuthor(final String name, final String biography) {
-        Author author = new Author(name, biography);
-        authorRepo.save(author);
     }
 }
-
-
-
