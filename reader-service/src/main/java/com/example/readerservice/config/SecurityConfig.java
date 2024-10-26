@@ -1,7 +1,6 @@
-package com.example.bookservice.config;
+package com.example.readerservice.config;
 
 import com.example.bookservice.model.Role;
-
 import com.nimbusds.jose.jwk.JWK;
 import com.nimbusds.jose.jwk.JWKSet;
 import com.nimbusds.jose.jwk.RSAKey;
@@ -14,16 +13,11 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
-import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.ProviderManager;
-import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
-import org.springframework.security.core.userdetails.UserDetailsService;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
@@ -101,18 +95,20 @@ public class SecurityConfig {
 
         // Our public endpoints
                 .requestMatchers("/api/public/**").permitAll() // public assets & end-points
+                .requestMatchers(HttpMethod.GET, "/api/readers/**").permitAll() // read-only for librarians
+                .requestMatchers(HttpMethod.GET, "/api/authors/**").permitAll() // read-only authors
                 .requestMatchers(HttpMethod.GET, "/api/books/**").hasRole(Role.LIBRARIAN) // read-only books
-                .requestMatchers(HttpMethod.GET, "/api/books/**").hasRole(Role.LIBRARIAN) // read-only books
-                .requestMatchers(HttpMethod.GET, "/api/books/**").hasRole(Role.LIBRARIAN) // read-only books
-                .requestMatchers(HttpMethod.GET, "/api/books/**").hasRole(Role.LIBRARIAN) // read-only books
-                .requestMatchers(HttpMethod.GET, "/api/books/**").hasRole(Role.LIBRARIAN) // read-only books
-                .requestMatchers(HttpMethod.GET, "/api/books/**").hasRole(Role.LIBRARIAN) // read-only books
-                .requestMatchers(HttpMethod.GET, "/api/books/**").hasRole(Role.LIBRARIAN) // read-only books
+                .requestMatchers(HttpMethod.GET, "/api/lendings/**").permitAll() // read-only lendings
 
-
+                .requestMatchers(HttpMethod.POST, "/api/readers/**").permitAll() // search-only readers
+                .requestMatchers(HttpMethod.POST, "/api/authors/**").permitAll() // read-only authors
                 .requestMatchers(HttpMethod.POST, "/api/books/**").permitAll() // read-only books
+                .requestMatchers(HttpMethod.POST, "/api/lendings/**").permitAll() // read-only lendings
 
+                .requestMatchers(HttpMethod.PATCH, "/api/readers/**").permitAll() // edit-only readers
+                .requestMatchers(HttpMethod.PATCH, "/api/authors/**").permitAll() // read-only authors
                 .requestMatchers(HttpMethod.PATCH, "/api/books/**").permitAll() // read-only books
+                .requestMatchers(HttpMethod.PATCH, "/api/lendings/**").permitAll() // read-only lendings
 
 
                 // Our private endpoints
