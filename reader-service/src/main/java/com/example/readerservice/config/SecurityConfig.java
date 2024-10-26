@@ -1,6 +1,6 @@
 package com.example.readerservice.config;
 
-import com.example.bookservice.model.Role;
+import com.example.readerservice.model.Role;
 import com.nimbusds.jose.jwk.JWK;
 import com.nimbusds.jose.jwk.JWKSet;
 import com.nimbusds.jose.jwk.RSAKey;
