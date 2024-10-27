@@ -18,7 +18,7 @@ public interface ReaderRepository {
 
     Optional<Reader> findByEmail(String email);
 
-    List<Reader> findByName(String name);
+    List<Reader> findByName(String fullName);
 
     List<Reader> findAll();
 

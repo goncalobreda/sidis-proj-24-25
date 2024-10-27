@@ -13,6 +13,8 @@ import java.util.Set;
 public abstract class ReaderViewMapper {
 
     @Mapping(source = "readerImage.readerImageID", target = "imageUrl", qualifiedByName = "mapImageIdToUrl")
+    @Mapping(source = "fullName", target = "fullName")
+    @Mapping(source = "readerID", target = "readerID") // Adiciona o mapeamento explícito do campo fullName
     public abstract ReaderView toReaderView(Reader reader);
 
     public abstract List<ReaderView> toReaderView(List<Reader> reader);
@@ -28,3 +30,4 @@ public abstract class ReaderViewMapper {
         return readerImageID != null ? "/api/readers/images/" + readerImageID : null;
     }
 }
+

@@ -16,6 +16,7 @@ import java.util.Objects;
 import java.util.Set;
 
 @Entity
+@EntityListeners(AuditListener.class) // Adiciona o AuditListener
 public class Reader {
 
     @Id
@@ -29,7 +30,7 @@ public class Reader {
     @NotNull
     @NotBlank
     @Size(max=150)
-    private String name;
+    private String fullName;
 
     @Column(unique = false, updatable = true, nullable = false)
     @NotNull
@@ -96,9 +97,9 @@ public class Reader {
 
     public Reader() {}
 
-    public Reader(final String name, final String password, final String email, final String birthdate,
+    public Reader(final String fullName, final String password, final String email, final String birthdate,
                   final String phoneNumber, final boolean GDPR) {
-        this.name = name;
+        this.fullName = fullName;
         setPassword(password);
         this.readerID = generateUniqueReaderID();
         this.email = email;
@@ -118,7 +119,7 @@ public class Reader {
         }
     }
 
-    private String generateUniqueReaderID() {
+    private synchronized String generateUniqueReaderID() {
         if (Year.now().getValue() != currentYear) {
             currentYear = Year.now().getValue();
             counter = 0;
@@ -128,14 +129,23 @@ public class Reader {
         return currentYear + "/" + counter;
     }
 
+
+
+
+
+
+
+
     public String getReaderID() { return readerID; }
     public void setReaderID(String readerID) { this.readerID = readerID; }
 
-    public String getName() { return name; }
-    public void setName(final String name) {
-        if (name == null || name.isBlank()) throw new IllegalArgumentException("Name cannot be null, nor blank");
-        this.name = name;
+    public String getFullName() { return fullName; }
+    public void setFullName(final String fullName) {
+        if (fullName == null || fullName.isBlank())
+            throw new IllegalArgumentException("Full name cannot be null or blank");
+        this.fullName = fullName;
     }
+
 
     public String getPassword() { return password; }
     public void setPassword(final String password) {
@@ -167,9 +177,10 @@ public class Reader {
     }
 
     public void setUniqueReaderID() {
-        this.readerID = generateUniqueReaderID();
+        if (this.readerID == null) { // Gera apenas se o ID ainda não foi definido
+            this.readerID = generateUniqueReaderID();
+        }
     }
-
     public Long getVersion() { return version; }
 
     public void setCreatedAt(LocalDateTime createdAt) {
@@ -180,12 +191,12 @@ public class Reader {
         return this.createdAt;
     }
 
-    public void applyPatch(final long desiredVersion, final String name, final String password, final String email,
+    public void applyPatch(final long desiredVersion, final String fullName, final String password, final String email,
                            final String birthdate, final String phoneNumber, final boolean GDPR, final Set<String> interests) {
         if (this.version != desiredVersion)
             throw new IllegalArgumentException("Object was already modified by another user");
 
-        if (name != null) setName(name);
+        if (fullName != null) setFullName(fullName);
         if (password != null) setPassword(password);
         if (email != null) setEmail(email);
         if (birthdate != null) setBirthdate(birthdate);

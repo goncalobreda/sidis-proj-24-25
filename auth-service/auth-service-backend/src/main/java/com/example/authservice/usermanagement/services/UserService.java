@@ -1,29 +1,52 @@
 package com.example.authservice.usermanagement.services;
 
+import com.example.authservice.dto.UserSyncDTO;
 import com.example.authservice.exceptions.ConflictException;
+import com.example.authservice.usermanagement.model.Role;
 import com.example.authservice.usermanagement.model.User;
 import com.example.authservice.usermanagement.repositories.UserRepository;
 import jakarta.validation.ValidationException;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.client.RestTemplate;
+import org.springframework.web.server.ResponseStatusException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 
 @Service
 @RequiredArgsConstructor
 public class UserService implements UserDetailsService {
 
+    private static final Logger logger = LoggerFactory.getLogger(UserService.class);
+
+
     private final UserRepository userRepo;
     private final EditUserMapper userEditMapper;
-
     private final PasswordEncoder passwordEncoder;
+    private final RestTemplate restTemplate;
+
+    @Value("${server.port}")
+    private String currentPort; // Porta da instância atual
+
+    @Value("${auth.instance1.url}")
+    private String authInstance1Url;
+
+    @Value("${auth.instance2.url}")
+    private String authInstance2Url;
 
     @Transactional
     public User create(final CreateUserRequest request) {
@@ -36,8 +59,48 @@ public class UserService implements UserDetailsService {
 
         final User user = userEditMapper.create(request);
         user.setPassword(passwordEncoder.encode(request.getPassword()));
+        user.addAuthority(new Role("READER"));
 
-        return userRepo.save(user);
+        User savedUser = userRepo.save(user);
+
+        syncUserWithOtherInstance(savedUser);
+
+        return savedUser;
+    }
+
+    private void syncUserWithOtherInstance(User user) {
+        Set<String> authoritiesAsString = user.getAuthorities().stream()
+                .map(Role::getAuthority)
+                .collect(Collectors.toSet());
+
+        UserSyncDTO userSyncDTO = new UserSyncDTO(
+                user.getUsername(),
+                user.getFullName(),
+                user.getPassword(),
+                user.isEnabled(),
+                authoritiesAsString
+        );
+
+        String otherInstanceUrl = getOtherInstanceUrl();
+        logger.info("Sincronizando usuário com dados: {}", userSyncDTO);
+
+        try {
+            restTemplate.postForEntity(otherInstanceUrl + "/api/public/sync", userSyncDTO, Void.class);
+        } catch (Exception e) {
+            logger.error("Erro ao sincronizar com a outra instância: {}", e.getMessage());
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Erro ao sincronizar com a outra instância: " + e.getMessage());
+        }
+    }
+
+
+
+
+    public String getOtherInstanceUrl() {
+        if (currentPort.equals("8080")) {
+            return authInstance2Url;
+        } else {
+            return authInstance1Url;
+        }
     }
 
     @Transactional
@@ -71,8 +134,8 @@ public class UserService implements UserDetailsService {
 
     @Override
     public UserDetails loadUserByUsername(final String username) throws UsernameNotFoundException {
-        return userRepo.findByUsername(username).orElseThrow(
-                () -> new UsernameNotFoundException(String.format("User with username - %s, not found", username)));
+        return userRepo.findByUsername(username)
+                .orElseThrow(() -> new UsernameNotFoundException(String.format("User with username - %s, not found", username)));
     }
 
     public boolean usernameExists(final String username) {

@@ -1,7 +1,8 @@
 package com.example.readerservice.infrastructure.repositories.impl;
 
+
 import com.example.readerservice.model.Reader;
-import com.example.readerservice.infrastructure.repositories.impl.ReaderRepoCustom;
+import com.example.readerservice.repositories.ReaderRepository;
 import com.example.readerservice.service.Page;
 import com.example.readerservice.service.SearchReadersQuery;
 import jakarta.persistence.EntityManager;
@@ -11,16 +12,19 @@ import jakarta.persistence.criteria.CriteriaQuery;
 import jakarta.persistence.criteria.Predicate;
 import jakarta.persistence.criteria.Root;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.CrudRepository;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import org.springframework.util.StringUtils;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
+
 
 @RequiredArgsConstructor
-@Repository
-public class ReaderRepoCustomImpl implements ReaderRepoCustom {
-
+class ReaderRepoCustomImpl implements ReaderRepoCustom {
     private final EntityManager em;
 
     @Override

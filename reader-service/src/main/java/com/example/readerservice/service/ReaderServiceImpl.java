@@ -6,12 +6,22 @@ import com.example.readerservice.exceptions.NotFoundException;
 import com.example.readerservice.model.Reader;
 import com.example.readerservice.model.ReaderCountDTO;
 import com.example.readerservice.repositories.ReaderRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
+
+import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.http.*;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDate;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 @Service
 public class ReaderServiceImpl implements ReaderService {
 
@@ -20,18 +30,49 @@ public class ReaderServiceImpl implements ReaderService {
     private final LendingServiceClient lendingServiceClient;
     private final BookServiceClient bookServiceClient;
 
+    private final RestTemplate restTemplate;
+    private static final Logger logger = LoggerFactory.getLogger(ReaderServiceImpl.class);
 
-    public ReaderServiceImpl(ReaderRepository readerRepository, EditReaderMapper editReaderMapper, LendingServiceClient lendingServiceClient, BookServiceClient bookServiceClient) {
+
+
+    @Value("${reader.instance1.url}")
+    private String readerInstance1Url;
+
+    @Value("${reader.instance2.url}")
+    private String readerInstance2Url;
+
+    @Value("${server.port}")
+    private String currentPort;
+
+
+
+    public ReaderServiceImpl(ReaderRepository readerRepository, EditReaderMapper editReaderMapper, LendingServiceClient lendingServiceClient, BookServiceClient bookServiceClient, RestTemplate restTemplate) {
         this.readerRepository = readerRepository;
         this.editReaderMapper = editReaderMapper;
         this.lendingServiceClient = lendingServiceClient;
         this.bookServiceClient = bookServiceClient;
+        this.restTemplate = restTemplate;
     }
 
     @Override
     public List<Reader> findAll() {
         return readerRepository.findAll();
     }
+
+    // Método para criar o Reader e sincronizar com a outra instância
+    public Reader createAndSync(CreateReaderRequest request) {
+        Reader reader = create(request);
+
+        // Garantir que o readerID está definido antes de sincronizar
+        if (reader.getReaderID() == null) {
+            reader.setUniqueReaderID();
+        }
+
+        notifyOtherInstance(request);  // Sincroniza com a outra instância
+        return reader;
+    }
+
+
 
     @Override
     public Reader create(CreateReaderRequest request) {
@@ -41,13 +82,60 @@ public class ReaderServiceImpl implements ReaderService {
 
         validateBirthdate(request.getBirthdate());
 
-        final Reader reader = editReaderMapper.create(request);
+        Reader reader = new Reader(
+                request.getFullName(),
+                request.getPassword(),
+                request.getEmail(),
+                request.getBirthdate(),
+                request.getPhoneNumber(),
+                request.isGDPR()
+        );
+
         reader.setUniqueReaderID();
+        logger.info("Generated readerID: ", reader.getReaderID()); // Verifique o valor aqui
+
+        return readerRepository.save(reader);
+    }
+
+    // Método para notificar a outra instância após a criação
+    private void notifyOtherInstance(CreateReaderRequest request) {
+        String otherInstanceUrl = currentPort.equals("8086") ? readerInstance2Url : readerInstance1Url;
+
+        try {
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+            HttpEntity<CreateReaderRequest> entity = new HttpEntity<>(request, headers);
+
+            ResponseEntity<Void> response = restTemplate.postForEntity(otherInstanceUrl + "/api/readers/internal/register", entity, Void.class);
+
+            if (response.getStatusCode() != HttpStatus.CREATED) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Erro ao notificar a outra instância do Reader Service: " + response.getStatusCode());
+            }
+
+        } catch (Exception e) {
+            System.err.println("Erro ao notificar a outra instância do Reader Service: " + e.getMessage());
+        }
+    }
+
+    public void syncReceivedReader(Reader reader) {
+        // Certifica que o readerID não é nulo, gerando se necessário
+        if (reader.getReaderID() == null) {
+            reader.setUniqueReaderID();
+        }
+
+        Optional<Reader> existingReader = readerRepository.findByReaderID(reader.getReaderID());
+        if (existingReader.isPresent()) {
+            System.out.println("Reader já existente, ignorando criação: " + reader.getReaderID());
+            return;  // Evita duplicação
+        }
 
         readerRepository.save(reader);
-
-        return reader;
+        System.out.println("Reader sincronizado com ID: " + reader.getReaderID());
     }
+
+
+
+
 
     public Reader partialUpdate(final String readerID, final EditReaderRequest request, final long desiredVersion) {
         final var reader = readerRepository.findByReaderID(readerID)
@@ -57,7 +145,7 @@ public class ReaderServiceImpl implements ReaderService {
             validateBirthdate(request.getBirthdate());
         }
 
-        reader.applyPatch(desiredVersion, request.getName(), null, request.getEmail(), request.getBirthdate(),
+        reader.applyPatch(desiredVersion, request.getFullName(), null, request.getEmail(), request.getBirthdate(),
                 request.getPhoneNumber(), request.isGDPR(), request.getInterests());
 
         readerRepository.save(reader);
@@ -78,8 +166,8 @@ public class ReaderServiceImpl implements ReaderService {
     }
 
     @Override
-    public List<Reader> getReaderByName(final String name) {
-        return readerRepository.findByName(name);
+    public List<Reader> getReaderByName(final String fullName) {
+        return readerRepository.findByName(fullName);
     }
 
     public List<Reader> searchReaders(Page page, SearchReadersQuery query) {

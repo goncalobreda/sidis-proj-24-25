@@ -123,8 +123,4 @@ public class LendingController {
             return ResponseEntity.ok(savedLending);
         }
     }
-
-
-
-
 }

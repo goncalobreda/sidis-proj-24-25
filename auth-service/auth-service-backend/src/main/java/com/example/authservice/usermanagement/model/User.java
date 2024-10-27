@@ -18,7 +18,6 @@ import java.util.HashSet;
 import java.util.Objects;
 import java.util.Set;
 
-
 @Entity
 @Table(name = "T_USER")
 @EntityListeners(AuditingEntityListener.class)
@@ -26,35 +25,29 @@ public class User implements UserDetails {
 
     private static final long serialVersionUID = 1L;
 
-    // database primary key
     @Id
     @GeneratedValue
     @Getter
     private Long id;
 
-    // optimistic lock concurrency control
     @Version
     private Long version;
 
-    // auditing info
     @CreatedDate
     @Column(nullable = false, updatable = false)
     @Getter
     private LocalDateTime createdAt;
 
-    // auditing info
     @LastModifiedDate
     @Column(nullable = false)
     @Getter
     private LocalDateTime modifiedAt;
 
-    // auditing info
     @CreatedBy
     @Column(nullable = false, updatable = false)
     @Getter
     private String createdBy;
 
-    // auditing info
     @LastModifiedBy
     @Column(nullable = false)
     private String modifiedBy;
@@ -112,6 +105,14 @@ public class User implements UserDetails {
 
     public void addAuthority(final Role r) {
         authorities.add(r);
+    }
+
+    // Novo método para definir todas as autoridades
+    public void setAuthorities(Set<Role> authorities) {
+        this.authorities.clear();
+        if (authorities != null) {
+            this.authorities.addAll(authorities);
+        }
     }
 
     @Override

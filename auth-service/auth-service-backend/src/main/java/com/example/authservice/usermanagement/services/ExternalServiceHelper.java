@@ -24,22 +24,26 @@ public class ExternalServiceHelper {
         this.restTemplate = restTemplate;
     }
 
-    // Método para registrar um Reader no ReaderService
-    public ResponseEntity<?> registerReaderInService(CreateReaderRequestDTO request) {
-        String readerServiceUrlInstance1 = readerInstance1Url + "/api/readers";
-        String readerServiceUrlInstance2 = readerInstance2Url + "/api/readers";
+    // Método para registrar um Reader em uma das instâncias do ReaderService
+    public ResponseEntity<ReaderViewDTO> registerReaderInService(CreateReaderRequestDTO request) {
+        String readerServiceUrlInstance1 = readerInstance1Url + "/api/readers/internal/register";
+        String readerServiceUrlInstance2 = readerInstance2Url + "/api/readers/internal/register";
 
+        System.out.println("Tentando registrar Reader com os dados: " + request);
+
+
+        // Tenta enviar a requisição para a primeira instância
         try {
-            ResponseEntity<ReaderViewDTO> response = restTemplate.postForEntity(readerServiceUrlInstance1, request, ReaderViewDTO.class);
-            return ResponseEntity.ok(response.getBody());
+            return restTemplate.postForEntity(readerServiceUrlInstance1, request, ReaderViewDTO.class);
         } catch (Exception e) {
-            System.err.println("Instância 1 do reader-service indisponível, tentando instância 2: " + e.getMessage());
-            try {
-                ResponseEntity<ReaderViewDTO> response = restTemplate.postForEntity(readerServiceUrlInstance2, request, ReaderViewDTO.class);
-                return ResponseEntity.ok(response.getBody());
-            } catch (Exception ex) {
-                throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE, "Ambas as instâncias do reader-service estão indisponíveis");
-            }
+            System.err.println("Instância 1 indisponível, tentando instância 2: " + e.getMessage());
+        }
+
+        // Tenta enviar a requisição para a segunda instância
+        try {
+            return restTemplate.postForEntity(readerServiceUrlInstance2, request, ReaderViewDTO.class);
+        } catch (Exception e) {
+            throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE, "Ambas as instâncias estão indisponíveis.");
         }
     }
 }

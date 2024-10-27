@@ -27,7 +27,7 @@ public interface SpringDataReaderRepository extends ReaderRepository, ReaderRepo
     Optional<Reader> findByEmail(@Param("email") String email);
 
     @Override
-    @Query("SELECT r FROM Reader r WHERE LOWER(r.name) LIKE LOWER(CONCAT('%', :name, '%'))")
+    @Query("SELECT r FROM Reader r WHERE LOWER(r.fullName) LIKE LOWER(CONCAT('%', :name, '%'))")
     List<Reader> findByName(@Param("name") String name);
 
     @Query("SELECT COUNT(r) FROM Reader r")

@@ -6,8 +6,10 @@ import com.example.readerservice.exceptions.NotFoundException;
 import com.example.readerservice.model.Reader;
 import com.example.readerservice.model.ReaderCountDTO;
 import com.example.readerservice.repositories.ReaderRepository;
+import com.example.readerservice.service.CreateReaderRequest;
 import com.example.readerservice.service.EditReaderRequest;
 import com.example.readerservice.service.ReaderServiceImpl;
+import com.example.readerservice.api.ReaderView;
 import com.example.readerservice.service.SearchReadersQuery;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -51,8 +53,8 @@ class ReaderController {
     }
 
     @Operation(summary = "Gets all readers")
-    @ApiResponse(description = "Success", responseCode = "200", content = { @Content(mediaType = "application/json",
-            array = @ArraySchema(schema = @Schema(implementation = ReaderView.class))) })
+    @ApiResponse(description = "Success", responseCode = "200", content = {@Content(mediaType = "application/json",
+            array = @ArraySchema(schema = @Schema(implementation = ReaderView.class)))})
     @GetMapping
     public Iterable<ReaderView> findAll() {
         return readerMapper.toReaderView(readerService.findAll());
@@ -149,6 +151,19 @@ class ReaderController {
 
         // Retorna o reader atualizado na resposta
         return ResponseEntity.ok(readerMapper.toReaderView(reader));
+    }
+
+    @Operation(summary = "Registra um novo Reader (Uso Interno)")
+    @PostMapping("/internal/register")
+    public ResponseEntity<Void> registerReader(@RequestBody Reader reader) {
+        try {
+            // Tenta sincronizar o reader recebido, sem criar um novo ID
+            readerService.syncReceivedReader(reader);
+            return ResponseEntity.status(HttpStatus.CREATED).build();
+        } catch (Exception e) {
+            logger.error("Erro ao processar a criação do reader: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+        }
     }
 
 }

@@ -10,7 +10,7 @@ import java.util.Set;
 public class ReaderView {
 
     @Schema(description = "The name of the reader")
-    private String name;
+    private String fullName;
 
     @Schema(description = "The readerID of the reader")
     private String readerID;

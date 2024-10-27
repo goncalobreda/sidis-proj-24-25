@@ -102,6 +102,8 @@ public class SecurityConfig {
 
                 .requestMatchers(HttpMethod.PATCH, "/api/readers/{id1}/{id2}").hasRole(Role.READER) // edit-only readers
                 .requestMatchers(HttpMethod.PATCH, "/api/readers/readers/{id1}/{id2}/interests").hasRole(Role.READER) // read-only for librarians
+                .requestMatchers(HttpMethod.POST, "/api/readers/internal/register").permitAll()
+
 
 
 

@@ -65,7 +65,7 @@ public class ReaderBootstrap implements CommandLineRunner {
             reader.setCreatedAt(createdAt);  // Definir o createdAt com base no argumento
             reader.setCreatedBy("system"); // ou outro utilizador apropriado
             readerRepo.save(reader);
-            System.out.println("Leitor criado: " + reader.getName() + " em " + createdAt);
+            System.out.println("Leitor criado: " + reader.getFullName() + " em " + createdAt);
         } else {
             // Se o leitor já existir, exibe mensagem
             System.out.println("Leitor já existe com o email: " + email);

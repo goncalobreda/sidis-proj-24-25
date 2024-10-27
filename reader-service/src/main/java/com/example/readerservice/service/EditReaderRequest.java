@@ -5,7 +5,8 @@ import jakarta.validation.constraints.Pattern;
 import java.util.Set;
 
 public class EditReaderRequest {
-    private String name;
+    private String fullName;
+    private String readerID;
     private String email;
     private String password;
     private String rePassword;
@@ -17,9 +18,10 @@ public class EditReaderRequest {
     private Set<String> interests;
 
     // Constructor
-    public EditReaderRequest(String name, String email, String password, String rePassword,
+    public EditReaderRequest(String fullName, String readerID, String email, String password, String rePassword,
                              String birthdate, String phoneNumber, boolean GDPR, Set<String> interests) {
-        this.name = name;
+        this.fullName = fullName;
+        this.readerID = readerID;
         this.email = email;
         this.password = password;
         this.rePassword = rePassword;
@@ -30,9 +32,20 @@ public class EditReaderRequest {
     }
 
     // Getters
-    public String getName() {
-        return name;
+    // Getters
+    public String getFullName() { // Altere o nome para "getFullName"
+        return fullName;
     }
+
+    public void setFullName(String fullName) { // Adicione o setter para "fullName"
+        this.fullName = fullName;
+    }
+
+    public String getReaderID() {
+        return readerID;
+    }
+
+
 
     public String getEmail() {
         return email;
