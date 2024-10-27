@@ -101,18 +101,26 @@ public class SecurityConfig {
 
         // Our public endpoints
                 .requestMatchers("/api/public/**").permitAll() // public assets & end-points
-                .requestMatchers(HttpMethod.GET, "/api/books/**").hasRole(Role.LIBRARIAN) // read-only books
-                .requestMatchers(HttpMethod.GET, "/api/books/**").hasRole(Role.LIBRARIAN) // read-only books
-                .requestMatchers(HttpMethod.GET, "/api/books/**").hasRole(Role.LIBRARIAN) // read-only books
-                .requestMatchers(HttpMethod.GET, "/api/books/**").hasRole(Role.LIBRARIAN) // read-only books
-                .requestMatchers(HttpMethod.GET, "/api/books/**").hasRole(Role.LIBRARIAN) // read-only books
-                .requestMatchers(HttpMethod.GET, "/api/books/**").hasRole(Role.LIBRARIAN) // read-only books
-                .requestMatchers(HttpMethod.GET, "/api/books/**").hasRole(Role.LIBRARIAN) // read-only books
+                .requestMatchers(HttpMethod.GET, "/api/books/top5Books").hasRole(Role.LIBRARIAN) // read-only books
+                .requestMatchers(HttpMethod.GET, "/api/books/top5Genres").hasRole(Role.LIBRARIAN) // read-only books
+                .requestMatchers(HttpMethod.GET, "/api/books/title/{title}").hasRole(Role.READER) // read-only books
+                .requestMatchers(HttpMethod.GET, "/api/books/isbn/{isbn}").hasAnyRole(Role.LIBRARIAN, Role.READER) // read-only books
+                .requestMatchers(HttpMethod.GET, "/api/books/images/{images}").permitAll() // read-only books
+                .requestMatchers(HttpMethod.GET, "/api/books/id/{id}").permitAll() // read-only books
+                .requestMatchers(HttpMethod.GET, "/api/books/genre/{genre}").hasAnyRole(Role.LIBRARIAN, Role.READER) // read-only books
+                .requestMatchers(HttpMethod.GET, "/api/books/author/{id1}/{id2}").hasRole(Role.READER) // read-only books
+                .requestMatchers(HttpMethod.GET, "/api/authors/id/{id1}/{id2}").hasAnyRole(Role.LIBRARIAN, Role.READER) // read-only books
+                .requestMatchers(HttpMethod.GET, "/api/authors/name/{name}").hasAnyRole(Role.LIBRARIAN, Role.READER) // read-only books
+                .requestMatchers(HttpMethod.GET, "/api/authors/{id1}/{id2}/coauthors").hasRole(Role.READER) // read-only books
+                .requestMatchers(HttpMethod.GET, "/api/authors/top5Authors").hasRole(Role.READER) // read-only books
+                .requestMatchers(HttpMethod.GET, "/api/authors/{id1}/{id2}/books").hasRole(Role.READER) // read-only books
 
 
-                .requestMatchers(HttpMethod.POST, "/api/books/**").permitAll() // read-only books
+                .requestMatchers(HttpMethod.POST, "/api/books").hasRole(Role.LIBRARIAN) // read-only books
+                .requestMatchers(HttpMethod.POST, "/api/authors").hasRole(Role.LIBRARIAN) // read-only books
 
-                .requestMatchers(HttpMethod.PATCH, "/api/books/**").permitAll() // read-only books
+                .requestMatchers(HttpMethod.PATCH, "/api/books/{bookID}").hasRole(Role.LIBRARIAN) // read-only books
+                .requestMatchers(HttpMethod.PATCH, "/api/authors/{id1}/{id2}").hasRole(Role.LIBRARIAN) // read-only books
 
 
                 // Our private endpoints

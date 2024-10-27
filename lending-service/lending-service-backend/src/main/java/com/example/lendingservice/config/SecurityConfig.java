@@ -95,20 +95,15 @@ public class SecurityConfig {
 
         // Our public endpoints
                 .requestMatchers("/api/public/**").permitAll() // public assets & end-points
-                .requestMatchers(HttpMethod.GET, "/api/readers/**").permitAll() // read-only for librarians
-                .requestMatchers(HttpMethod.GET, "/api/authors/**").permitAll() // read-only authors
-                .requestMatchers(HttpMethod.GET, "/api/books/**").hasRole(Role.LIBRARIAN) // read-only books
-                .requestMatchers(HttpMethod.GET, "/api/lendings/**").permitAll() // read-only lendings
+le // read-only books
+                .requestMatchers(HttpMethod.GET, "/api/lendings/{id1}/{id2}").hasAnyRole(Role.LIBRARIAN, Role.READER) // read-only lendings
+                .requestMatchers(HttpMethod.GET, "/api/lendings/overdue").hasRole(Role.LIBRARIAN) // read-only lendings
+                .requestMatchers(HttpMethod.GET, "/api/lendings/average-lending-duration").hasRole(Role.LIBRARIAN) // read-only lendings
+                .requestMatchers(HttpMethod.GET, "/api/lendings/average-lending-per-genre").hasRole(Role.LIBRARIAN) // read-only lendings
 
-                .requestMatchers(HttpMethod.POST, "/api/readers/**").permitAll() // search-only readers
-                .requestMatchers(HttpMethod.POST, "/api/authors/**").permitAll() // read-only authors
-                .requestMatchers(HttpMethod.POST, "/api/books/**").permitAll() // read-only books
-                .requestMatchers(HttpMethod.POST, "/api/lendings/**").permitAll() // read-only lendings
+                .requestMatchers(HttpMethod.POST, "/api/lendings").hasRole(Role.LIBRARIAN) // read-only lendings
 
-                .requestMatchers(HttpMethod.PATCH, "/api/readers/**").permitAll() // edit-only readers
-                .requestMatchers(HttpMethod.PATCH, "/api/authors/**").permitAll() // read-only authors
-                .requestMatchers(HttpMethod.PATCH, "/api/books/**").permitAll() // read-only books
-                .requestMatchers(HttpMethod.PATCH, "/api/lendings/**").permitAll() // read-only lendings
+                .requestMatchers(HttpMethod.PATCH, "/api/lendings/{id1}/{id2}").hasRole(Role.READER) // read-only lendings
 
 
                 // Our private endpoints
