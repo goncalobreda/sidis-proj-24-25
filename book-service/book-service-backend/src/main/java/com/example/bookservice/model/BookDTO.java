@@ -1,5 +1,8 @@
 package com.example.bookservice.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+
+@JsonIgnoreProperties({"authors", "bookImage", "genre"}) // Ignore todas as relações profundas
 public class BookDTO {
 
     private Long bookId;

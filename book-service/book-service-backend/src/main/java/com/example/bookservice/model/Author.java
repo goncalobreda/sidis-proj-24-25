@@ -1,6 +1,8 @@
 package com.example.bookservice.model;
 
 import com.example.bookservice.model.Book;
+import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.Getter;
@@ -29,6 +31,7 @@ public class Author {
 
     @ManyToMany(mappedBy = "author")
     @JsonIgnoreProperties("author")
+    @JsonIgnore
     private List<Book> books = new ArrayList<>();
 
     @OneToOne(mappedBy = "author", cascade = CascadeType.ALL, orphanRemoval = true)

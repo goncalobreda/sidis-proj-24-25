@@ -9,15 +9,35 @@ import com.example.bookservice.repositories.GenreRepository;
 import com.example.bookservice.exceptions.NotFoundException;
 
 
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
+import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import com.example.bookservice.repositories.BookRepository;
+import org.springframework.web.client.RestTemplate;
 
 import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
 public class BookServiceImpl implements BookService {
+
+    @PersistenceContext
+    private EntityManager entityManager;
+
+    @Autowired
+    private RestTemplate restTemplate;
+
+    @Value("${server.port}")
+    private String currentPort; // Porta da instância atual
+
+    @Value("${book.instance1.url}")
+    private String bookInstance1Url;
+
+    @Value("${book.instance2.url}")
+    private String bookInstance2Url;
 
     private final BookRepository bookRepository;
 
@@ -36,6 +56,7 @@ public class BookServiceImpl implements BookService {
         this.lendingServiceClient = lendingServiceClient;
     }
 
+    @Override
     public Book create(CreateBookRequest request) {
         String isbn = request.getIsbn();
         Book book = new Book();
@@ -43,82 +64,68 @@ public class BookServiceImpl implements BookService {
             throw new IllegalArgumentException("Invalid ISBN");
         }
 
-        // Fetch the Genre entity
         Genre genre = genreRepository.findByInterest(request.getGenre());
         if (genre == null) {
             throw new NotFoundException("Genre not found");
         }
 
-        // Fetch the Author entities
         List<Author> authors = new ArrayList<>();
         for (String authorId : request.getAuthorIds()) {
             Author author = authorRepository.findByAuthorID(authorId)
                     .orElseThrow(() -> new NotFoundException("Author not found with ID: " + authorId));
-            if (author.getAuthorID() == null) {
-                author = authorRepository.save(author);
-            }
             authors.add(author);
         }
 
-        // Fetch the BookImage entity
         BookImage bookImage = bookImageRepository.findById(request.getBookImageId())
                 .orElseThrow(() -> new NotFoundException("Book image not found"));
 
-        // Create and save the new Book entity
         Book newBook = new Book();
         newBook.setIsbn(isbn);
         newBook.setTitle(request.getTitle());
         newBook.setGenre(genre);
         newBook.setDescription(request.getDescription());
-        newBook.setAuthor(authors); // Set the list of authors
+        newBook.setAuthor(authors);
         newBook.setBookImage(bookImage);
 
-        bookRepository.save(newBook);
-        return newBook;
+        // Salva o livro na instância atual
+        Book savedBook = bookRepository.save(newBook);
+
+        // Obtenha a URL da outra instância para sincronização
+        String otherInstanceUrl = getOtherInstanceUrl();
+        System.out.println("Other instance url: " + otherInstanceUrl);
+        BookDTO bookDTO = new BookDTO(book);
+        bookDTO.setTitle(savedBook.getTitle());
+
+        // Sincronizar com a outra instância
+        try {
+            // Usa o DTO ou a entidade que você precisa para representar o livro na requisição
+            restTemplate.postForEntity(otherInstanceUrl + "/api/books/sync", savedBook, Book.class);
+        } catch (Exception e) {
+            System.err.println("Erro ao sincronizar o livro com a outra instância: " + e.getMessage());
+        }
+
+        return savedBook;
     }
+
+
+    public String getOtherInstanceUrl() {
+        if (currentPort.equals("8082")) {
+            return bookInstance2Url;
+        } else {
+            return bookInstance1Url;
+        }
+    }
+
 
 
     @Override
     public boolean isBookIDUnique(Long bookID) {
-        // Check if readerID already exists
         return bookRepository.findBookByBookID(bookID).isEmpty();
     }
 
     @Override
     public Optional<Book> getBookById(final Long bookID) {
-        Optional<Book> book = bookRepository.findBookByBookID(bookID);
-
-        if (book.isEmpty()) {
-            book = lendingServiceClient.getBookFromOtherInstance(bookID);
-
-            if (book.isPresent()) {
-                Book foundBook = book.get();
-
-                // Check and save the genre if it's transient
-                Genre genre = foundBook.getGenre();
-                if (genre != null && genre.getId() == null) {
-                    genreRepository.save(genre);
-                }
-
-                // Check and save each author if they're transient
-                List<Author> authors = foundBook.getAuthor();
-                List<Author> savedAuthors = new ArrayList<>();
-                for (Author author : authors) {
-                    if (author.getAuthorID() == null) {
-                        author = authorRepository.save(author); // Save transient authors
-                    }
-                    savedAuthors.add(author);
-                }
-                foundBook.setAuthor(savedAuthors);
-
-                // Save the book after ensuring all relationships are persisted
-                bookRepository.save(foundBook);
-            } else {
-                throw new NotFoundException("Book not found in both instances for bookID: " + bookID);
-            }
-        }
-
-        return book;
+        return bookRepository.findById(bookID);
     }
 
     public List<Book> getAll() {

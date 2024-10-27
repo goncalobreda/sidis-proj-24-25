@@ -1,5 +1,7 @@
 package com.example.bookservice.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import org.springframework.dao.OptimisticLockingFailureException;
 
@@ -30,6 +32,7 @@ public class Book {
             joinColumns = @JoinColumn(name = "book_id"),
             inverseJoinColumns = @JoinColumn(name = "author_id")
     )
+    @JsonIgnore
     private List<Author> author = new ArrayList<>();
 
     @ManyToOne

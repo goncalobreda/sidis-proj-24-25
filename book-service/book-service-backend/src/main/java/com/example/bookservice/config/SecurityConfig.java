@@ -117,7 +117,8 @@ public class SecurityConfig {
 
 
                 .requestMatchers(HttpMethod.POST, "/api/books").hasRole(Role.LIBRARIAN) // read-only books
-                .requestMatchers(HttpMethod.POST, "/api/authors").hasRole(Role.LIBRARIAN) // read-only books
+                .requestMatchers(HttpMethod.POST, "/api/authors").hasRole(Role.LIBRARIAN)
+                .requestMatchers(HttpMethod.POST, "/api/books/sync").permitAll()// read-only books
 
                 .requestMatchers(HttpMethod.PATCH, "/api/books/{bookID}").hasRole(Role.LIBRARIAN) // read-only books
                 .requestMatchers(HttpMethod.PATCH, "/api/authors/{id1}/{id2}").hasRole(Role.LIBRARIAN) // read-only books

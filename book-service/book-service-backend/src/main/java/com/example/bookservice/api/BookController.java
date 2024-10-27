@@ -175,6 +175,29 @@ class BookController {
         return ResponseEntity.ok(bookMapper.toBookView(createdBook));
     }
 
+    @PostMapping("/sync")
+    public ResponseEntity<Book> createBookSync(@RequestBody Book book) {
+        // Verifique se o livro já existe na instância atual com base no ISBN ou ID
+        Optional<Book> existingBook = bookRepository.findByIsbn(book.getIsbn());
+
+        if (existingBook.isPresent()) {
+            // Se o livro já existe, atualize-o para evitar duplicação
+            Book existing = existingBook.get();
+            existing.setTitle(book.getTitle());
+            existing.setGenre(book.getGenre());
+            existing.setDescription(book.getDescription());
+            existing.setAuthor(book.getAuthor());
+            existing.setBookImage(book.getBookImage());
+            existing.setVersion(book.getVersion());
+
+            Book updatedBook = bookRepository.save(existing);
+            return ResponseEntity.ok(updatedBook);
+        } else {
+            // Se o livro não existir, crie um novo
+            Book savedBook = bookRepository.save(book);
+            return ResponseEntity.ok(savedBook);
+        }
+    }
 
 
 

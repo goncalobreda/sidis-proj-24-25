@@ -95,7 +95,6 @@ public class SecurityConfig {
 
         // Our public endpoints
                 .requestMatchers("/api/public/**").permitAll() // public assets & end-points
-          // read-only books
                 .requestMatchers(HttpMethod.GET, "/api/lendings/{id1}/{id2}").hasAnyRole(Role.LIBRARIAN, Role.READER) // read-only lendings
                 .requestMatchers(HttpMethod.GET, "/api/lendings/overdue").hasRole(Role.LIBRARIAN) // read-only lendings
                 .requestMatchers(HttpMethod.GET, "/api/lendings/average-lending-duration").hasRole(Role.LIBRARIAN) // read-only lendings

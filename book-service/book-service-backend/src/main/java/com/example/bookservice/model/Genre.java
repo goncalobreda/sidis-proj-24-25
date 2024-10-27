@@ -1,5 +1,6 @@
 package com.example.bookservice.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 
 import java.util.ArrayList;
@@ -27,6 +28,7 @@ public class Genre {
 
     @OneToMany(mappedBy = "genre", orphanRemoval = true,
             cascade = CascadeType.ALL)
+    @JsonIgnore
     private List<Book> books;
 
     public Genre(String interest) {
