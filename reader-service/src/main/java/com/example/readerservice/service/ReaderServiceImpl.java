@@ -68,7 +68,7 @@ public class ReaderServiceImpl implements ReaderService {
             reader.setUniqueReaderID();
         }
 
-        notifyOtherInstance(request);  // Sincroniza com a outra instância
+        notifyOtherInstance(reader);  // Sincroniza com a outra instância
         return reader;
     }
 
@@ -98,24 +98,28 @@ public class ReaderServiceImpl implements ReaderService {
     }
 
     // Método para notificar a outra instância após a criação
-    private void notifyOtherInstance(CreateReaderRequest request) {
+    public void notifyOtherInstance(Reader reader) {
+        // Define o URL da outra instância com base na porta atual
         String otherInstanceUrl = currentPort.equals("8086") ? readerInstance2Url : readerInstance1Url;
 
         try {
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_JSON);
-            HttpEntity<CreateReaderRequest> entity = new HttpEntity<>(request, headers);
 
+            // Cria uma entidade HTTP com o Reader para envio
+            HttpEntity<Reader> entity = new HttpEntity<>(reader, headers);
+
+            // Envia para o endpoint interno de registro da outra instância
             ResponseEntity<Void> response = restTemplate.postForEntity(otherInstanceUrl + "/api/readers/internal/register", entity, Void.class);
 
             if (response.getStatusCode() != HttpStatus.CREATED) {
                 throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Erro ao notificar a outra instância do Reader Service: " + response.getStatusCode());
             }
-
         } catch (Exception e) {
-            System.err.println("Erro ao notificar a outra instância do Reader Service: " + e.getMessage());
+            logger.error("Erro ao notificar a outra instância do Reader Service: {}", e.getMessage());
         }
     }
+
 
     public void syncReceivedReader(Reader reader) {
         // Certifica que o readerID não é nulo, gerando se necessário

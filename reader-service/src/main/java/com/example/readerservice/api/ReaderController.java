@@ -159,6 +159,8 @@ class ReaderController {
         try {
             // Tenta sincronizar o reader recebido, sem criar um novo ID
             readerService.syncReceivedReader(reader);
+
+            readerService.notifyOtherInstance(reader);
             return ResponseEntity.status(HttpStatus.CREATED).build();
         } catch (Exception e) {
             logger.error("Erro ao processar a criação do reader: {}", e.getMessage());
