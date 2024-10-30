@@ -34,6 +34,10 @@ public class LendingServiceImpl implements LendingService {
     @Value("${lending.instance2.url}")
     private String lendingInstance2Url;
 
+    public LendingServiceImpl (LendingRepository lendingRepository){
+        this.lendingRepository = lendingRepository;
+    }
+
     @Override
     public Iterable<Lending> findAll() {
         return lendingRepository.findAll();
