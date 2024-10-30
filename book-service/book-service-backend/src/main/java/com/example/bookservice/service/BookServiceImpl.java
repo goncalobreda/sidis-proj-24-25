@@ -48,12 +48,13 @@ public class BookServiceImpl implements BookService {
     private final LendingServiceClient lendingServiceClient;
 
     @Autowired
-    public BookServiceImpl(BookRepository bookRepository, BookImageRepository bookImageRepository, GenreRepository genreRepository, AuthorRepository authorRepository, LendingServiceClient lendingServiceClient) {
+    public BookServiceImpl(BookRepository bookRepository, BookImageRepository bookImageRepository, GenreRepository genreRepository, AuthorRepository authorRepository, LendingServiceClient lendingServiceClient, RestTemplate restTemplate) {
         this.bookRepository = bookRepository;
         this.bookImageRepository = bookImageRepository;
         this.genreRepository = genreRepository;
         this.authorRepository = authorRepository;
         this.lendingServiceClient = lendingServiceClient;
+        this.restTemplate = restTemplate;
     }
 
     @Override

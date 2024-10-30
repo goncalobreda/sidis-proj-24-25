@@ -55,9 +55,10 @@ class BookServiceUnitTest {
         authorRepository = Mockito.mock(AuthorRepository.class);
         bookImageRepository = Mockito.mock(BookImageRepository.class);
         lendingServiceClient = Mockito.mock(LendingServiceClient.class);
-        bookService = new BookServiceImpl(bookRepository, bookImageRepository, genreRepository, authorRepository,  lendingServiceClient);
+        restTemplate = new RestTemplate();
+        bookService = new BookServiceImpl(bookRepository, bookImageRepository, genreRepository, authorRepository,  lendingServiceClient, restTemplate);
 
-        ReflectionTestUtils.setField(bookService, "currentPort", "${server.port}");
+        ReflectionTestUtils.setField(bookService, "currentPort", "8082");
     }
 
     @Test

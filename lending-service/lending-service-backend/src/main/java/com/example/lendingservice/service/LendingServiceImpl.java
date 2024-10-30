@@ -35,8 +35,10 @@ public class LendingServiceImpl implements LendingService {
     private String lendingInstance2Url;
 
     @Autowired
-    public LendingServiceImpl (LendingRepository lendingRepository){
+    public LendingServiceImpl (LendingRepository lendingRepository, ExternalServiceHelper externalServiceHelper, RestTemplate restTemplate){
         this.lendingRepository = lendingRepository;
+        this.externalServiceHelper = externalServiceHelper;
+        this.restTemplate = restTemplate;
     }
 
     @Override
