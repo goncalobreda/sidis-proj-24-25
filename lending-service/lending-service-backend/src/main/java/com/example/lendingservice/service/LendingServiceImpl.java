@@ -34,6 +34,7 @@ public class LendingServiceImpl implements LendingService {
     @Value("${lending.instance2.url}")
     private String lendingInstance2Url;
 
+    @Autowired
     public LendingServiceImpl (LendingRepository lendingRepository){
         this.lendingRepository = lendingRepository;
     }
