@@ -153,7 +153,7 @@ class ReaderController {
         return ResponseEntity.ok(readerMapper.toReaderView(reader));
     }
 
-    @Operation(summary = "Registra um novo Reader (Uso Interno)")
+    @Operation(summary = "Regista um novo Reader (Uso Interno)")
     @PostMapping("/internal/register")
     public ResponseEntity<Void> registerReader(@RequestBody Reader reader) {
         try {

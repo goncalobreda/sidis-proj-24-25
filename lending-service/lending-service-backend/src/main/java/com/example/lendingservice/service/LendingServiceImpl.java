@@ -69,25 +69,25 @@ public class LendingServiceImpl implements LendingService {
 
     @Override
     public Lending create(CreateLendingRequest request) {
-        // Tenta buscar o bookID do book-service usando a classe ExternalServiceHelper
+        //  bookID do book-service c ExternalServiceHelper
         Long bookID = externalServiceHelper.getBookIDFromService(request.getBookID());
 
         // Separar o readerID em duas partes (id1 e id2)
-        String readerID = request.getReaderID(); // Exemplo: "2024/3"
+        String readerID = request.getReaderID();
         String[] readerParts = readerID.split("/"); // Dividir o readerID em duas partes
         String id1 = readerParts[0];
         String id2 = readerParts[1];
 
-        // Verificar se o readerID existe no reader-service usando a ExternalServiceHelper
+        // Verificar se o readerID existe no reader-service c ExternalServiceHelper
         String readerIDResult = externalServiceHelper.getReaderIDFromService(id1, id2);
 
-        // Verificar se o leitor tem empréstimos em atraso
+        // Verificar se o reader tem empréstimos em atraso
         boolean hasOverdueLending = lendingRepository.existsByReaderIDAndOverdueTrue(readerIDResult);
         if (hasOverdueLending) {
             throw new IllegalArgumentException("Reader has overdue lending and cannot borrow more books.");
         }
 
-        // Verificar se o leitor já tem 3 livros emprestados
+        // Verificar se o reader já tem 3 livros emprestados
         long activeLendingsCount = lendingRepository.countActiveLendingsByReaderID(readerIDResult);
         if (activeLendingsCount >= 3) {
             throw new IllegalArgumentException("Reader already has the maximum number of active lendings (3).");
@@ -95,13 +95,13 @@ public class LendingServiceImpl implements LendingService {
 
         // Criar o empréstimo com os dados obtidos
         LocalDate startDate = LocalDate.now();
-        LocalDate expectedReturnDate = startDate.plusDays(14); // Exemplo de prazo de devolução
+        LocalDate expectedReturnDate = startDate.plusDays(14);
 
         Lending lending = new Lending(bookID, readerIDResult, startDate, null, expectedReturnDate, false, 0);
         lending.updateOverdueStatus();
         Lending savedLending = lendingRepository.save(lending); // Guardar na instância atual
 
-        // Sincronizar com a outra instância via HTTP POST (se aplicável)
+        // Sincronizar com a outra instância via HTTP
         String otherInstanceUrl = getOtherInstanceUrl();
         try {
             restTemplate.postForEntity(otherInstanceUrl + "/api/lendings/sync", savedLending, Lending.class);
@@ -113,7 +113,6 @@ public class LendingServiceImpl implements LendingService {
     }
 
 
-    // Método para determinar a URL da outra instância
     public String getOtherInstanceUrl() {
         if (currentPort.equals("8084")) {
             return lendingInstance2Url; // Se estiver na instância 1, sincroniza com a instância 2

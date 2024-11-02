@@ -29,14 +29,14 @@ public class ExternalServiceHelper {
         String readerServiceUrlInstance1 = readerInstance1Url + "/api/readers/internal/register";
         String readerServiceUrlInstance2 = readerInstance2Url + "/api/readers/internal/register";
 
-        System.out.println("Tentando registrar Reader com os dados: " + request);
+        System.out.println("registar Reader com os dados: " + request);
 
 
         // Tenta enviar a requisição para a primeira instância
         try {
             return restTemplate.postForEntity(readerServiceUrlInstance1, request, ReaderViewDTO.class);
         } catch (Exception e) {
-            System.err.println("Instância 1 indisponível, tentando instância 2: " + e.getMessage());
+            System.err.println("Instância 1 indisponível, try instância 2: " + e.getMessage());
         }
 
         // Tenta enviar a requisição para a segunda instância

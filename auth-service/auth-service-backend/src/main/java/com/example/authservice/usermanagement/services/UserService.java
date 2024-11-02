@@ -82,7 +82,7 @@ public class UserService implements UserDetailsService {
         );
 
         String otherInstanceUrl = getOtherInstanceUrl();
-        logger.info("Sincronizando usuário com dados: {}", userSyncDTO);
+        logger.info("Sincronizando user com dados: {}", userSyncDTO);
 
         try {
             restTemplate.postForEntity(otherInstanceUrl + "/api/public/sync", userSyncDTO, Void.class);
