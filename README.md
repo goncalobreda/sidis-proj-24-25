@@ -4,6 +4,7 @@
 
 Este projeto implementa um sistema de gestão de bibliotecas baseado numa arquitetura de microserviços distribuídos. O sistema facilita a gestão de autenticação, readers, books (incluindo autores e géneros) e empréstimos, utilizando REST APIs para comunicação entre serviços. A arquitetura foi desenhada para ser escalável, modular e de fácil manutenção. 
 
+
 	# Tecnologias Utilizadas
 
 - Java 21

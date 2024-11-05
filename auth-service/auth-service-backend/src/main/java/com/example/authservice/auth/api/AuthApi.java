@@ -87,7 +87,7 @@ public class AuthApi {
         try {
             externalServiceHelper.registerReaderInService(requestDTO);
         } catch (Exception e) {
-            logger.error("Erro ao registrar o leitor nas instâncias do Reader Service: {}", e.getMessage());
+            logger.error("Erro ao registar o leitor nas instâncias do Reader Service: {}", e.getMessage());
             return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body("Erro ao registrar o leitor nas instâncias do Reader Service.");
         }
 
