@@ -39,3 +39,7 @@ public interface LendingRepository {
     Optional<Lending> findByBookIDAndReaderIDAndStartDateAndExpectedReturnDate(Long bookID, String readerID, LocalDate startDate, LocalDate expectedReturnDate);
 
 }
+
+
+
+
