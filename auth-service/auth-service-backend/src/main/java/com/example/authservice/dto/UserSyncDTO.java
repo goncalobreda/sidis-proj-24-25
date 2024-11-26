@@ -1,22 +1,31 @@
 package com.example.authservice.dto;
 
-import com.example.authservice.usermanagement.model.Role;
+import java.io.Serializable;
 import java.util.Set;
 
-public class UserSyncDTO {
+public class UserSyncDTO implements Serializable {
+    private static final long serialVersionUID = 1L;
+
     private String username;
     private String fullName;
     private String password;
     private boolean enabled;
     private Set<String> authorities;
+    private String originInstanceId; // Novo campo para identificar a origem
 
-    // Construtor
-    public UserSyncDTO(String username, String fullName, String password, boolean enabled, Set<String> authorities) {
+    // Construtor vazio
+    public UserSyncDTO() {
+        // Necessário para Jackson
+    }
+
+    // Construtor com argumentos
+    public UserSyncDTO(String username, String fullName, String password, boolean enabled, Set<String> authorities, String originInstanceId) {
         this.username = username;
         this.fullName = fullName;
         this.password = password;
         this.enabled = enabled;
         this.authorities = authorities;
+        this.originInstanceId = originInstanceId;
     }
 
     // Getters e Setters
@@ -34,4 +43,7 @@ public class UserSyncDTO {
 
     public Set<String> getAuthorities() { return authorities; }
     public void setAuthorities(Set<String> authorities) { this.authorities = authorities; }
+
+    public String getOriginInstanceId() { return originInstanceId; }
+    public void setOriginInstanceId(String originInstanceId) { this.originInstanceId = originInstanceId; }
 }

@@ -2,6 +2,7 @@ package com.example.authservice.usermanagement.services;
 
 import com.example.authservice.dto.UserSyncDTO;
 import com.example.authservice.exceptions.ConflictException;
+import com.example.authservice.messaging.RabbitMQProducer;
 import com.example.authservice.usermanagement.model.Role;
 import com.example.authservice.usermanagement.model.User;
 import com.example.authservice.usermanagement.repositories.UserRepository;
@@ -20,12 +21,10 @@ import org.springframework.web.server.ResponseStatusException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
-
 
 @Service
 @RequiredArgsConstructor
@@ -33,14 +32,14 @@ public class UserService implements UserDetailsService {
 
     private static final Logger logger = LoggerFactory.getLogger(UserService.class);
 
-
     private final UserRepository userRepo;
     private final EditUserMapper userEditMapper;
     private final PasswordEncoder passwordEncoder;
     private final RestTemplate restTemplate;
+    private final RabbitMQProducer rabbitMQProducer;
 
-    @Value("${server.port}")
-    private String currentPort; // Porta da instância atual
+    @Value("${instance.id}") // ID único para identificar a instância (auth1 ou auth2)
+    private String instanceId;
 
     @Value("${auth.instance1.url}")
     private String authInstance1Url;
@@ -69,6 +68,8 @@ public class UserService implements UserDetailsService {
     }
 
     private void syncUserWithOtherInstance(User user) {
+        logger.info("Sincronizando utilizador da instância {} para outra instância", instanceId);
+
         Set<String> authoritiesAsString = user.getAuthorities().stream()
                 .map(Role::getAuthority)
                 .collect(Collectors.toSet());
@@ -78,25 +79,16 @@ public class UserService implements UserDetailsService {
                 user.getFullName(),
                 user.getPassword(),
                 user.isEnabled(),
-                authoritiesAsString
+                authoritiesAsString,
+                instanceId
         );
 
-        String otherInstanceUrl = getOtherInstanceUrl();
-        logger.info("Sincronizando user com dados: {}", userSyncDTO);
-
-        try {
-            restTemplate.postForEntity(otherInstanceUrl + "/api/public/sync", userSyncDTO, Void.class);
-        } catch (Exception e) {
-            logger.error("Erro ao sincronizar com a outra instância: {}", e.getMessage());
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Erro ao sincronizar com a outra instância: " + e.getMessage());
-        }
+        logger.info("Sincronizando utilizador com RabbitMQ: {}", userSyncDTO);
+        rabbitMQProducer.sendMessage("user.sync.create", userSyncDTO);
     }
 
-
-
-
     public String getOtherInstanceUrl() {
-        if (currentPort.equals("8080")) {
+        if ("auth1".equals(instanceId)) {
             return authInstance2Url;
         } else {
             return authInstance1Url;
@@ -113,21 +105,22 @@ public class UserService implements UserDetailsService {
 
     @Transactional
     public User upsert(final CreateUserRequest request) {
-        final Optional<User> optionalUser = userRepo.findByUsername(request.getUsername());
-
+        Optional<User> optionalUser = userRepo.findByUsername(request.getUsername());
         if (optionalUser.isEmpty()) {
             return create(request);
         }
-        final EditUserRequest updateUserRequest = new EditUserRequest(request.getFullName(), request.getAuthorities());
-        return update(optionalUser.get().getId(), updateUserRequest);
+
+        User user = optionalUser.get();
+        user.setFullName(request.getFullName());
+        user.setAuthorities(request.getAuthorities().stream().map(Role::new).collect(Collectors.toSet()));
+
+        return userRepo.save(user);
     }
 
     @Transactional
     public User delete(final Long id) {
         final User user = userRepo.getById(id);
 
-        // user.setUsername(user.getUsername().replace("@", String.format("_%s@",
-        // user.getId().toString())));
         user.setEnabled(false);
         return userRepo.save(user);
     }

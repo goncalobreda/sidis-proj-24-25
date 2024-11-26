@@ -11,6 +11,7 @@ import com.example.readerservice.service.EditReaderRequest;
 import com.example.readerservice.service.ReaderServiceImpl;
 import com.example.readerservice.api.ReaderView;
 import com.example.readerservice.service.SearchReadersQuery;
+import com.example.readerservice.messaging.RabbitMQProducer;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
@@ -44,12 +45,14 @@ class ReaderController {
     private final ReaderServiceImpl readerService;
     private final ReaderViewMapper readerMapper;
     private final ReaderRepository readerRepository;
+    private final RabbitMQProducer rabbitMQProducer;
 
     @Autowired
-    public ReaderController(ReaderServiceImpl readerService, ReaderViewMapper readerMapper, ReaderRepository readerRepo) {
+    public ReaderController(ReaderServiceImpl readerService, ReaderViewMapper readerMapper, ReaderRepository readerRepo, RabbitMQProducer rabbitMQProducer) {
         this.readerService = readerService;
         this.readerMapper = readerMapper;
         this.readerRepository = readerRepo;
+        this.rabbitMQProducer = rabbitMQProducer;
     }
 
     @Operation(summary = "Gets all readers")
@@ -136,22 +139,22 @@ class ReaderController {
             @PathVariable("id2") String id2,
             @RequestBody Set<String> newInterests) {
 
-        // Concatena o id1 e o id2 para formar o readerID
         String readerID = id1 + "/" + id2;
 
-        // Busca o reader com o readerID completo (ano/counter)
+        // encontra o reader com o readerID completo (ano/counter)
         Reader reader = readerService.getReaderByID(readerID)
                 .orElseThrow(() -> new NotFoundException(Reader.class, readerID));
 
         // Adiciona os novos interesses ao leitor
         reader.addInterests(newInterests);
 
-        // Salva o reader atualizado
+        // guarda o reader atualizado
         readerRepository.save(reader);
 
         // Retorna o reader atualizado na resposta
         return ResponseEntity.ok(readerMapper.toReaderView(reader));
     }
+
 
     @Operation(summary = "Regista um novo Reader (Uso Interno)")
     @PostMapping("/internal/register")
@@ -160,7 +163,9 @@ class ReaderController {
             // Tenta sincronizar o reader recebido, sem criar um novo ID
             readerService.syncReceivedReader(reader);
 
-            readerService.notifyOtherInstance(reader);
+            // Envia uma mensagem para outras instâncias via RabbitMQ
+            rabbitMQProducer.sendSyncMessage(reader);
+
             return ResponseEntity.status(HttpStatus.CREATED).build();
         } catch (Exception e) {
             logger.error("Erro ao processar a criação do reader: {}", e.getMessage());

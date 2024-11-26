@@ -1,57 +1,46 @@
 package com.example.readerservice.service;
 
 import com.example.readerservice.client.*;
-import com.example.readerservice.exceptions.ConflictException;
-import com.example.readerservice.exceptions.NotFoundException;
+import com.example.readerservice.dto.UserSyncDTO;
+import com.example.readerservice.messaging.RabbitMQProducer;
 import com.example.readerservice.model.Reader;
 import com.example.readerservice.model.ReaderCountDTO;
 import com.example.readerservice.repositories.ReaderRepository;
+import com.example.readerservice.exceptions.ConflictException;
+import com.example.readerservice.exceptions.NotFoundException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
-
-import org.springframework.boot.context.properties.ConfigurationProperties;
-import org.springframework.http.*;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestTemplate;
-import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDate;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 @Service
 public class ReaderServiceImpl implements ReaderService {
+
+    private static final Logger logger = LoggerFactory.getLogger(ReaderServiceImpl.class);
 
     private final ReaderRepository readerRepository;
     private final EditReaderMapper editReaderMapper;
     private final LendingServiceClient lendingServiceClient;
     private final BookServiceClient bookServiceClient;
+    private final RabbitMQProducer rabbitMQProducer;
 
-    private final RestTemplate restTemplate;
-    private static final Logger logger = LoggerFactory.getLogger(ReaderServiceImpl.class);
+    @Value("${instance.id}")
+    private String instanceId;
 
-
-
-    @Value("${reader.instance1.url}")
-    private String readerInstance1Url;
-
-    @Value("${reader.instance2.url}")
-    private String readerInstance2Url;
-
-    @Value("${server.port}")
-    private String currentPort;
-
-
-
-    public ReaderServiceImpl(ReaderRepository readerRepository, EditReaderMapper editReaderMapper, LendingServiceClient lendingServiceClient, BookServiceClient bookServiceClient, RestTemplate restTemplate) {
+    public ReaderServiceImpl(ReaderRepository readerRepository,
+                             EditReaderMapper editReaderMapper,
+                             LendingServiceClient lendingServiceClient,
+                             BookServiceClient bookServiceClient,
+                             RabbitMQProducer rabbitMQProducer) {
         this.readerRepository = readerRepository;
         this.editReaderMapper = editReaderMapper;
         this.lendingServiceClient = lendingServiceClient;
         this.bookServiceClient = bookServiceClient;
-        this.restTemplate = restTemplate;
+        this.rabbitMQProducer = rabbitMQProducer;
     }
 
     @Override
@@ -59,25 +48,10 @@ public class ReaderServiceImpl implements ReaderService {
         return readerRepository.findAll();
     }
 
-    // Método para criar o Reader e sincronizar com a outra instância
-    public Reader createAndSync(CreateReaderRequest request) {
-        Reader reader = create(request);
-
-        // Garantir que o readerID está definido antes de sincronizar
-        if (reader.getReaderID() == null) {
-            reader.setUniqueReaderID();
-        }
-
-        notifyOtherInstance(reader);  // Sincroniza com a outra instância
-        return reader;
-    }
-
-
-
     @Override
     public Reader create(CreateReaderRequest request) {
         if (readerRepository.findByEmail(request.getEmail()).isPresent()) {
-            throw new ConflictException("Email already exists! Cannot create a new reader.");
+            throw new ConflictException("Email já existe! Não é possível criar um novo leitor.");
         }
 
         validateBirthdate(request.getBirthdate());
@@ -92,58 +66,52 @@ public class ReaderServiceImpl implements ReaderService {
         );
 
         reader.setUniqueReaderID();
-        logger.info("Generated readerID: ", reader.getReaderID()); // Verifique o valor aqui
+        logger.info("Generated readerID: {}", reader.getReaderID());
+
+        Reader savedReader = readerRepository.save(reader);
+
+        // Notifica outras instâncias sobre o novo leitor
+        rabbitMQProducer.sendSyncMessage(savedReader);
+
+        return savedReader;
+    }
+
+    public Reader createFromUserSyncDTO(UserSyncDTO userSyncDTO) {
+        if (readerRepository.existsByEmail(userSyncDTO.getUsername())) {
+            logger.info("Leitor já existe: {}", userSyncDTO.getUsername());
+            return readerRepository.findByEmail(userSyncDTO.getUsername()).get();
+        }
+
+        Reader reader = new Reader();
+        reader.setEmail(userSyncDTO.getUsername());
+        reader.setFullName(userSyncDTO.getFullName());
+        reader.setPassword(userSyncDTO.getPassword());
+        reader.setEnabled(userSyncDTO.isEnabled());
+
+        // Definir o readerID
+        reader.setUniqueReaderID();
+
+        // Definir um valor padrão para o birthdate
+        reader.setBirthdate(String.valueOf(LocalDate.of(2000, 1, 1)));
 
         return readerRepository.save(reader);
     }
 
-    // Método para notificar a outra instância após a criação
-    public void notifyOtherInstance(Reader reader) {
-        // Define o URL da outra instância com base na porta atual
-        String otherInstanceUrl = currentPort.equals("8086") ? readerInstance2Url : readerInstance1Url;
-
-        try {
-            HttpHeaders headers = new HttpHeaders();
-            headers.setContentType(MediaType.APPLICATION_JSON);
-
-            // Cria uma entidade HTTP com o Reader para envio
-            HttpEntity<Reader> entity = new HttpEntity<>(reader, headers);
-
-            // Envia para o endpoint interno de registro da outra instância
-            ResponseEntity<Void> response = restTemplate.postForEntity(otherInstanceUrl + "/api/readers/internal/register", entity, Void.class);
-
-            if (response.getStatusCode() != HttpStatus.CREATED) {
-                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Erro ao notificar a outra instância do Reader Service: " + response.getStatusCode());
-            }
-        } catch (Exception e) {
-            logger.error("Erro ao notificar a outra instância do Reader Service: {}", e.getMessage());
-        }
-    }
 
 
     public void syncReceivedReader(Reader reader) {
-        // Certifica que o readerID não é nulo, gerando se necessário
-        if (reader.getReaderID() == null) {
-            reader.setUniqueReaderID();
-        }
-
-        Optional<Reader> existingReader = readerRepository.findByReaderID(reader.getReaderID());
-        if (existingReader.isPresent()) {
-            System.out.println("Reader já existente, ignorando criação: " + reader.getReaderID());
-            return;  // Evita duplicação
+        if (readerRepository.existsByEmail(reader.getEmail())) {
+            logger.info("Leitor já existente: {}", reader.getEmail());
+            return;
         }
 
         readerRepository.save(reader);
-        System.out.println("Reader sincronizado com ID: " + reader.getReaderID());
+        logger.info("Leitor sincronizado com sucesso: {}", reader.getEmail());
     }
-
-
-
-
 
     public Reader partialUpdate(final String readerID, final EditReaderRequest request, final long desiredVersion) {
         final var reader = readerRepository.findByReaderID(readerID)
-                .orElseThrow(() -> new NotFoundException("Cannot update an object that does not yet exist"));
+                .orElseThrow(() -> new NotFoundException("Não é possível atualizar um objeto que não existe"));
 
         if (request.getBirthdate() != null) {
             validateBirthdate(request.getBirthdate());
@@ -152,12 +120,8 @@ public class ReaderServiceImpl implements ReaderService {
         reader.applyPatch(desiredVersion, request.getFullName(), null, request.getEmail(), request.getBirthdate(),
                 request.getPhoneNumber(), request.isGDPR(), request.getInterests());
 
-        readerRepository.save(reader);
-
-        return reader;
+        return readerRepository.save(reader);
     }
-
-
 
     @Override
     public Optional<Reader> getReaderByID(final String readerID) {
@@ -185,62 +149,57 @@ public class ReaderServiceImpl implements ReaderService {
     }
 
     private void validateBirthdate(final String birthdate) {
-        if (birthdate == null) throw new IllegalArgumentException("Birthdate cannot be null");
+        if (birthdate == null) throw new IllegalArgumentException("A data de nascimento não pode ser nula");
         if (!birthdate.isBlank()) {
             String[] parts = birthdate.split("-");
-            if (parts.length != 3) throw new IllegalArgumentException("Birthdate must be in the format YYYY-MM-DD");
+            if (parts.length != 3) throw new IllegalArgumentException("Data de nascimento deve estar no formato YYYY-MM-DD");
 
             try {
                 int birthdateDay = Integer.parseInt(parts[2]);
                 int birthdateMonth = Integer.parseInt(parts[1]);
                 int birthdateYear = Integer.parseInt(parts[0]);
 
-                if (birthdateYear <= 0) throw new IllegalArgumentException("Year must be positive");
-                if (birthdateMonth < 1 || birthdateMonth > 12) throw new IllegalArgumentException("Month must be between 1 and 12");
-                if (birthdateDay < 1 || birthdateDay > 31) throw new IllegalArgumentException("Day must be between 1 and 31 for the given month");
+                if (birthdateYear <= 0) throw new IllegalArgumentException("Ano deve ser positivo");
+                if (birthdateMonth < 1 || birthdateMonth > 12) throw new IllegalArgumentException("Mês deve estar entre 1 e 12");
+                if (birthdateDay < 1 || birthdateDay > 31) throw new IllegalArgumentException("Dia deve estar entre 1 e 31 para o mês dado");
 
                 if ((birthdateMonth == 4 || birthdateMonth == 6 || birthdateMonth == 9 || birthdateMonth == 11) && birthdateDay > 30) {
-                    throw new IllegalArgumentException("Day must be between 1 and 30 for the given month");
+                    throw new IllegalArgumentException("Dia deve estar entre 1 e 30 para o mês dado");
                 }
 
                 if (birthdateMonth == 2) {
                     boolean isLeapYear = (birthdateYear % 4 == 0 && birthdateYear % 100 != 0) || (birthdateYear % 400 == 0);
                     int maxDayInFebruary = isLeapYear ? 29 : 28;
                     if (birthdateDay > maxDayInFebruary) {
-                        throw new IllegalArgumentException("Day must be between 1 and " + maxDayInFebruary + " for February");
+                        throw new IllegalArgumentException("Dia deve estar entre 1 e " + maxDayInFebruary + " para fevereiro");
                     }
                 }
 
                 if (LocalDate.of(birthdateYear, birthdateMonth, birthdateDay).isAfter(LocalDate.now().minusYears(12))) {
-                    throw new IllegalArgumentException("Minimum age is 12");
+                    throw new IllegalArgumentException("Idade mínima é 12 anos");
                 }
 
             } catch (NumberFormatException e) {
-                throw new IllegalArgumentException("Birthdate must contain valid integers for day, month, and year", e);
+                throw new IllegalArgumentException("Data de nascimento deve conter inteiros válidos para dia, mês e ano", e);
             }
         }
     }
 
     public List<ReaderCountDTO> findTop5Readers() {
-        // Obter todos os lendings
         List<LendingDTO> lendings = lendingServiceClient.getAllLendings();
 
-        // Contar quantos empréstimos cada reader fez
         Map<String, Long> readerIdCounts = lendings.stream()
                 .collect(Collectors.groupingBy(LendingDTO::getReaderID, Collectors.counting()));
 
-        // Obter os 5 readers com mais empréstimos
         List<Map.Entry<String, Long>> top5Readers = readerIdCounts.entrySet().stream()
                 .sorted(Map.Entry.<String, Long>comparingByValue().reversed())
                 .limit(5)
                 .collect(Collectors.toList());
 
-
         return top5Readers.stream()
                 .map(entry -> new ReaderCountDTO(entry.getKey(), entry.getValue()))
                 .collect(Collectors.toList());
     }
-
 
     public List<GenreDTO> getBookSuggestions(Reader reader) {
         Set<String> interests = getInterestsByReader(reader);
@@ -255,9 +214,5 @@ public class ReaderServiceImpl implements ReaderService {
 
     public Set<String> getInterestsByReader(Reader reader) {
         return reader.getInterests();
-
     }
-
-
-
 }
