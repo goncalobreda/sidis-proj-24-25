@@ -1,6 +1,6 @@
-package com.example.authservice.dto;
+package com.example.readerservice.dto;
 
-import com.example.authservice.usermanagement.services.CreateUserRequest;
+import com.example.readerservice.service.CreateReaderRequest;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
@@ -42,12 +42,16 @@ public class CreateReaderRequestDTO {
     @Schema(description = "Consentimento de GDPR", example = "true")
     private boolean GDPR;
 
-    public CreateUserRequest toCreateUserRequest() {
-        return new CreateUserRequest(
+    public CreateReaderRequest toCreateReaderRequest() {
+        return new CreateReaderRequest(
                 this.email,
                 this.fullName,
                 this.password,
-                this.phoneNumber // Incluindo phoneNumber no mapeamento
+                this.rePassword,
+                this.birthdate,
+                this.interests,
+                this.phoneNumber,
+                this.GDPR
         );
     }
 

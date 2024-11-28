@@ -12,6 +12,7 @@ public class UserSyncDTO implements Serializable {
     private boolean enabled;
     private Set<String> authorities;
     private String originInstanceId; // Novo campo para identificar a origem
+    private String phoneNumber;
 
     // Construtor vazio
     public UserSyncDTO() {
@@ -19,13 +20,14 @@ public class UserSyncDTO implements Serializable {
     }
 
     // Construtor com argumentos
-    public UserSyncDTO(String username, String fullName, String password, boolean enabled, Set<String> authorities, String originInstanceId) {
+    public UserSyncDTO(String username, String fullName, String password, boolean enabled, Set<String> authorities, String originInstanceId, String phoneNumber) {
         this.username = username;
         this.fullName = fullName;
         this.password = password;
         this.enabled = enabled;
         this.authorities = authorities;
         this.originInstanceId = originInstanceId;
+        this.phoneNumber = phoneNumber;
     }
 
     // Getters e Setters
@@ -46,4 +48,8 @@ public class UserSyncDTO implements Serializable {
 
     public String getOriginInstanceId() { return originInstanceId; }
     public void setOriginInstanceId(String originInstanceId) { this.originInstanceId = originInstanceId; }
+
+    public String getPhoneNumber() { return phoneNumber; }
+    public void setPhoneNumber(String phoneNumber) { this.phoneNumber = phoneNumber; }
+
 }

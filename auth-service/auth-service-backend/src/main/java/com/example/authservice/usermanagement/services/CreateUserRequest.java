@@ -33,21 +33,27 @@ public class CreateUserRequest {
     private String rePassword;
 
     private Set<String> authorities = new HashSet<>();
+    @NonNull
+    @NotBlank
+    private String phoneNumber;
 
-    public CreateUserRequest(final String username, final String fullName, final String password) {
+    public CreateUserRequest(final String username, final String fullName, final String password, final String phoneNumber) {
         this.username = username;
         this.fullName = fullName;
         this.password = password;
-        this.rePassword = password;
+        this.rePassword = password; // Definir rePassword automaticamente
+        this.phoneNumber = phoneNumber; // Certifique-se de atribuir phoneNumber
     }
 
-    public CreateUserRequest(final String username, final String fullName, final String password, final Set<String> authorities) {
+    public CreateUserRequest(final String username, final String fullName, final String password, final Set<String> authorities, String phoneNumber) {
         this.username = username;
         this.fullName = fullName;
         this.password = password;
-        this.rePassword = password; // Assign password to rePassword
+        this.rePassword = password; // Definir rePassword automaticamente
         this.authorities = authorities;
+        this.phoneNumber = phoneNumber;
     }
+
 
     // Getters and Setters
 

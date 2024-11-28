@@ -26,6 +26,8 @@ public class RabbitMQConsumer {
     @RabbitListener(queues = "${rabbitmq.queue.name}")
     public void processMessage(UserSyncDTO userSyncDTO) {
         logger.info("Mensagem recebida do auth-service: {}", userSyncDTO);
+        logger.info("Recebendo UserSyncDTO: username={}, phoneNumber={}", userSyncDTO.getUsername(), userSyncDTO.getPhoneNumber());
+
 
         try {
             readerServiceImpl.createFromUserSyncDTO(userSyncDTO);

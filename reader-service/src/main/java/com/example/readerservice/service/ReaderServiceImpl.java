@@ -77,6 +77,9 @@ public class ReaderServiceImpl implements ReaderService {
     }
 
     public Reader createFromUserSyncDTO(UserSyncDTO userSyncDTO) {
+        logger.info("Criando Reader a partir de UserSyncDTO: {}", userSyncDTO);
+        logger.info("PhoneNumber recebido no UserSyncDTO: {}", userSyncDTO.getPhoneNumber());
+
         if (readerRepository.existsByEmail(userSyncDTO.getUsername())) {
             logger.info("Leitor já existe: {}", userSyncDTO.getUsername());
             return readerRepository.findByEmail(userSyncDTO.getUsername()).get();
@@ -87,6 +90,10 @@ public class ReaderServiceImpl implements ReaderService {
         reader.setFullName(userSyncDTO.getFullName());
         reader.setPassword(userSyncDTO.getPassword());
         reader.setEnabled(userSyncDTO.isEnabled());
+        reader.setPhoneNumber(userSyncDTO.getPhoneNumber());
+
+        logger.info("Criando Reader: username={}, phoneNumber={}", reader.getEmail(), reader.getPhoneNumber());
+
 
         // Definir o readerID
         reader.setUniqueReaderID();

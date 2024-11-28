@@ -29,7 +29,8 @@ public class RabbitMQProducer {
                 reader.getFullName(),
                 reader.getPassword(),
                 reader.isEnabled(),
-                instanceId
+                instanceId,
+                reader.getPhoneNumber()
         );
 
         try {

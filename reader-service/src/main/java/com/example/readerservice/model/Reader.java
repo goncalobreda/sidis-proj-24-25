@@ -167,8 +167,10 @@ public class Reader {
     public String getPhoneNumber() { return phoneNumber; }
     public void setPhoneNumber(final String phoneNumber) {
         if (phoneNumber == null) throw new IllegalArgumentException("Phone number cannot be null");
+        System.out.println("Definindo phoneNumber no Reader: " + phoneNumber);
         this.phoneNumber = phoneNumber;
     }
+
 
     public boolean getGDPR() { return GDPR; }
     public void setGDPR(final boolean GDPR) {

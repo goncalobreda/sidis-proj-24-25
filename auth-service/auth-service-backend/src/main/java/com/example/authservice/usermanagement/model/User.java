@@ -73,6 +73,10 @@ public class User implements UserDetails {
     @Setter
     private String fullName;
 
+    @Getter
+    @Setter
+    private String phoneNumber;
+
     @ElementCollection
     @Getter
     private final Set<Role> authorities = new HashSet<>();
@@ -107,7 +111,6 @@ public class User implements UserDetails {
         authorities.add(r);
     }
 
-    // Novo método para definir todas as autoridades
     public void setAuthorities(Set<Role> authorities) {
         this.authorities.clear();
         if (authorities != null) {
@@ -133,5 +136,13 @@ public class User implements UserDetails {
     public void applyPatch(final String username, final String password) {
         if (username != null) this.username = username;
         if (password != null) setPassword(password);
+    }
+
+    public String getPhoneNumber() {
+        return phoneNumber;
+    }
+
+    public void setPhoneNumber(String phoneNumber) {
+        this.phoneNumber = phoneNumber;
     }
 }

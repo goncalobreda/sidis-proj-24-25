@@ -23,6 +23,9 @@ public class RabbitMQConsumer {
 
     @RabbitListener(queues = "${rabbitmq.queue.name}")
     public void processMessage(UserSyncDTO userSyncDTO) {
+        logger.info("Mensagem recebida do auth-service: {}", userSyncDTO);
+        logger.info("PhoneNumber recebido no UserSyncDTO: {}", userSyncDTO.getPhoneNumber());
+
         // Verifica se a mensagem foi enviada pela mesma instância
         if (instanceId.equals(userSyncDTO.getOriginInstanceId())) {
             logger.info("Mensagem ignorada pois foi enviada pela mesma instância: {}", instanceId);
@@ -36,7 +39,8 @@ public class RabbitMQConsumer {
                     userSyncDTO.getUsername(),
                     userSyncDTO.getFullName(),
                     userSyncDTO.getPassword(),
-                    userSyncDTO.getAuthorities()
+                    userSyncDTO.getAuthorities(),
+                    userSyncDTO.getPhoneNumber()
             ));
             logger.info("Sincronização concluída para utilizador: {}", userSyncDTO.getUsername());
         } catch (Exception e) {

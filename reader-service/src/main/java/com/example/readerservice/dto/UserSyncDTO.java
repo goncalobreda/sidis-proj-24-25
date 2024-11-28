@@ -10,13 +10,15 @@ public class UserSyncDTO implements Serializable {
     private String password;
     private boolean enabled;
     private String originInstanceId;
+    private String phoneNumber;
 
-    public UserSyncDTO(String username, String fullName, String password, boolean enabled, String originInstanceId) {
+    public UserSyncDTO(String username, String fullName, String password, boolean enabled, String originInstanceId, String phoneNumber) {
         this.username = username;
         this.fullName = fullName;
         this.password = password;
         this.enabled = enabled;
         this.originInstanceId = originInstanceId;
+        this.phoneNumber = phoneNumber;
     }
 
     public String getUsername() {
@@ -58,4 +60,8 @@ public class UserSyncDTO implements Serializable {
     public void setOriginInstanceId(String originInstanceId) {
         this.originInstanceId = originInstanceId;
     }
+
+    public String getPhoneNumber() { return phoneNumber; }
+    public void setPhoneNumber(String phoneNumber) { this.phoneNumber = phoneNumber; }
+
 }

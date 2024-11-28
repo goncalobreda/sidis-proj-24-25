@@ -57,10 +57,17 @@ public class UserService implements UserDetailsService {
         }
 
         final User user = userEditMapper.create(request);
+        logger.info("User criado pelo mapper: {}", user);
+        logger.info("PhoneNumber do User após mapeamento: {}", user.getPhoneNumber());
+        user.setPhoneNumber(request.getPhoneNumber());
         user.setPassword(passwordEncoder.encode(request.getPassword()));
         user.addAuthority(new Role("READER"));
 
+
         User savedUser = userRepo.save(user);
+
+        logger.info("User salvo no banco de dados: {}", savedUser);
+        logger.info("PhoneNumber salvo no banco: {}", savedUser.getPhoneNumber());
 
         syncUserWithOtherInstance(savedUser);
 
@@ -69,6 +76,8 @@ public class UserService implements UserDetailsService {
 
     private void syncUserWithOtherInstance(User user) {
         logger.info("Sincronizando utilizador da instância {} para outra instância", instanceId);
+        logger.info("Sincronizando utilizador: username={}, phoneNumber={}", user.getUsername(), user.getPhoneNumber());
+
 
         Set<String> authoritiesAsString = user.getAuthorities().stream()
                 .map(Role::getAuthority)
@@ -80,10 +89,13 @@ public class UserService implements UserDetailsService {
                 user.getPassword(),
                 user.isEnabled(),
                 authoritiesAsString,
-                instanceId
+                instanceId,
+                user.getPhoneNumber()
         );
 
-        logger.info("Sincronizando utilizador com RabbitMQ: {}", userSyncDTO);
+
+        logger.info("UserSyncDTO criado para sincronização: {}", userSyncDTO);
+        logger.info("PhoneNumber no UserSyncDTO: {}", userSyncDTO.getPhoneNumber());
         rabbitMQProducer.sendMessage("user.sync.create", userSyncDTO);
     }
 
