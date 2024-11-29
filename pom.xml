@@ -31,8 +31,10 @@
     <modules>
         <module>book-service</module>
         <module>lending-service</module>
-        <module>reader-service</module>
-        <module>auth-service</module>
+        <module>readerCommand-service</module>
+        <module>readerQuery-service</module>
+        <module>authCommand-service</module>
+        <module>authQuery-service</module>
     </modules> <!-- Adição dos módulos -->
 
     <dependencyManagement>

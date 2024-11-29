@@ -1,0 +1,11 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="AuthServiceCommand Instance1" type="SpringBootApplicationConfigurationType" factoryName="Spring Boot" activateToolWindowBeforeRun="false">
+    <option name="ACTIVE_PROFILES" value="instance1" />
+    <option name="ALTERNATIVE_JRE_PATH" value="openjdk-21" />
+    <module name="authCommand-service-backend" />
+    <option name="SPRING_BOOT_MAIN_CLASS" value="com.example.authserviceCommand.AuthServiceApplication" />
+    <method v="2">
+      <option name="Make" enabled="true" />
+    </method>
+  </configuration>
+</component>
