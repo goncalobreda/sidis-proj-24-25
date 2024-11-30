@@ -17,7 +17,7 @@ public class RabbitMQProducer {
 
     private final RabbitTemplate rabbitTemplate;
 
-    @Value("${instance.id}") // ID único para identificar a instância
+    @Value("${instance.id}")
     private String instanceId;
 
     public <T> void sendMessage(String routingKey, T message) {
@@ -29,6 +29,16 @@ public class RabbitMQProducer {
             rabbitTemplate.convertAndSend(RabbitMQConfig.EXCHANGE_NAME, routingKey, message);
         } catch (Exception e) {
             logger.error("Erro ao enviar mensagem para RabbitMQ: {}", e.getMessage());
+        }
+    }
+
+    public <T> void sendBootstrapMessage(T message) {
+        String routingKey = "bootstrap.sync." + instanceId;
+        try {
+            logger.info("Enviando mensagem de bootstrap para RabbitMQ: routingKey={}, message={}", routingKey, message);
+            rabbitTemplate.convertAndSend(RabbitMQConfig.EXCHANGE_NAME, routingKey, message);
+        } catch (Exception e) {
+            logger.error("Erro ao enviar mensagem de bootstrap para RabbitMQ: {}", e.getMessage());
         }
     }
 }

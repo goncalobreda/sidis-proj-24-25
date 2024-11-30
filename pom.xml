@@ -30,7 +30,8 @@
 
     <modules>
         <module>book-service</module>
-        <module>lending-service</module>
+        <module>lendingCommand-service</module>
+        <module>lendingQuery-service</module>
         <module>readerCommand-service</module>
         <module>readerQuery-service</module>
         <module>authCommand-service</module>

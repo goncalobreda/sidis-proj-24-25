@@ -62,4 +62,37 @@ public class RabbitMQConsumer {
     private Set<Role> convertAuthorities(Set<String> authorities) {
         return authorities.stream().map(Role::new).collect(Collectors.toSet());
     }
+
+    @RabbitListener(queues = "${rabbitmq.bootstrap.queue.name}")
+    public void processBootstrapMessage(UserSyncDTO userSyncDTO) {
+        logger.info("Mensagem de bootstrap recebida no Query Service: {}", userSyncDTO);
+
+        // Ignorar mensagens da mesma instância
+        if (userSyncDTO.getOriginInstanceId() == null || userSyncDTO.getOriginInstanceId().equals(instanceId)) {
+            logger.info("Mensagem de bootstrap ignorada, originInstanceId={} é igual à instanceId={}", userSyncDTO.getOriginInstanceId(), instanceId);
+            return;
+        }
+
+        try {
+            logger.info("Processando bootstrap para utilizador: {}", userSyncDTO.getUsername());
+
+            // Verificar se o utilizador já existe
+            User user = userRepo.findByUsername(userSyncDTO.getUsername())
+                    .orElse(new User(userSyncDTO.getUsername(), userSyncDTO.getPassword()));
+
+            // Atualizar os dados do utilizador
+            user.setFullName(userSyncDTO.getFullName());
+            user.setAuthorities(convertAuthorities(userSyncDTO.getAuthorities()));
+            user.setEnabled(userSyncDTO.isEnabled());
+            user.setPhoneNumber(userSyncDTO.getPhoneNumber());
+
+            // Salvar no repositório
+            userSyncRepo.save(user);
+
+            logger.info("Bootstrap concluído com sucesso para utilizador: {}", userSyncDTO.getUsername());
+        } catch (Exception e) {
+            logger.error("Erro ao processar mensagem de bootstrap no Query Service: {}", e.getMessage());
+        }
+    }
+
 }

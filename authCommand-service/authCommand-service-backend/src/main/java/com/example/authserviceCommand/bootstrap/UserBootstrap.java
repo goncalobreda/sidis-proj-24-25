@@ -21,7 +21,7 @@ public class UserBootstrap implements CommandLineRunner {
     private final PasswordEncoder encoder;
     private final RabbitMQProducer rabbitMQProducer;
 
-    @Value("${instance.id}") // ID único da instância (command.auth1 ou command.auth2)
+    @Value("${instance.id}")
     private String instanceId;
 
     @Override
@@ -31,42 +31,36 @@ public class UserBootstrap implements CommandLineRunner {
         // Criação e sincronização dos utilizadores
         createAndSyncUser("librarian1@mail.com", "pass1");
         createAndSyncUser("librarian2@mail.com", "pass2");
-        createAndSyncUser("librarian3@mail.com", "pass3");
-        createAndSyncUser("librarian4@mail.com", "pass4");
-        createAndSyncUser("librarian5@mail.com", "pass5");
-        createAndSyncUser("librarian6@mail.com", "pass6");
-        createAndSyncUser("librarian7@mail.com", "pass7");
-        createAndSyncUser("librarian8@mail.com", "pass8");
-        createAndSyncUser("librarian9@mail.com", "pass9");
-        createAndSyncUser("librarian10@mail.com", "pass10");
+
+        // Após sincronizar os utilizadores, enviar uma mensagem de bootstrap para AuthQuery
+        sendBootstrapSignal();
     }
 
     private void createAndSyncUser(String email, String password) {
-        // Verifica se o utilizador já existe
         if (userRepo.findByUsername(email).isEmpty()) {
-            // Cria o utilizador
             final var user = new User(email, encoder.encode(password));
             user.addAuthority(new Role(Role.LIBRARIAN));
-
-            // Salva no banco de dados do Command
             User savedUser = userRepo.save(user);
 
-            // Converte o utilizador para UserSyncDTO
             UserSyncDTO userSyncDTO = new UserSyncDTO(
                     savedUser.getUsername(),
                     savedUser.getFullName(),
                     savedUser.getPassword(),
                     savedUser.isEnabled(),
                     savedUser.getAuthorities().stream().map(Role::getAuthority).collect(Collectors.toSet()),
-                    instanceId, // Inclui o ID da instância de origem
+                    instanceId,
                     savedUser.getPhoneNumber()
             );
 
-            // Envia evento para o Query através do RabbitMQ com uma routing key dinâmica
             String routingKey = "user.sync." + instanceId;
             rabbitMQProducer.sendMessage(routingKey, userSyncDTO);
-
             System.out.println("Utilizador sincronizado: " + savedUser.getUsername());
         }
+    }
+
+    private void sendBootstrapSignal() {
+        String bootstrapMessage = "Bootstrap completo pela instância " + instanceId;
+        rabbitMQProducer.sendBootstrapMessage(bootstrapMessage);
+        System.out.println("Sinal de bootstrap enviado.");
     }
 }

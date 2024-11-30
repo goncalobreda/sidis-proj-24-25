@@ -14,14 +14,24 @@ public class RabbitMQConfig {
     @Value("${rabbitmq.queue.name}")
     private String queueName;
 
+    @Value("${rabbitmq.bootstrap.queue.name}")
+    private String bootstrapQueueName;
+
     @Value("${instance.id}")
     private String instanceId;
 
     public static final String EXCHANGE_NAME = "auth-service-exchange";
 
+    // Queue para sincronização de utilizadores
     @Bean
     public Queue syncQueue() {
         return new Queue(queueName, true);
+    }
+
+    // Queue para bootstrap
+    @Bean
+    public Queue bootstrapQueue() {
+        return new Queue(bootstrapQueueName, true);
     }
 
     @Bean
@@ -29,10 +39,18 @@ public class RabbitMQConfig {
         return new TopicExchange(EXCHANGE_NAME);
     }
 
+    // Binding para a queue de sincronização
     @Bean
     public Binding syncQueueBinding(Queue syncQueue, TopicExchange authExchange) {
         String routingKey = "user.sync." + instanceId;
         return BindingBuilder.bind(syncQueue).to(authExchange).with(routingKey);
+    }
+
+    // Binding para a queue de bootstrap
+    @Bean
+    public Binding bootstrapQueueBinding(Queue bootstrapQueue, TopicExchange authExchange) {
+        String routingKey = "bootstrap.sync." + instanceId;
+        return BindingBuilder.bind(bootstrapQueue).to(authExchange).with(routingKey);
     }
 
     @Bean
