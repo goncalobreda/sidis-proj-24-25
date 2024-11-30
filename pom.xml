@@ -29,7 +29,8 @@
     </properties>
 
     <modules>
-        <module>book-service</module>
+        <module>bookCommand-service</module>
+        <module>bookQuery-service</module>
         <module>lendingCommand-service</module>
         <module>lendingQuery-service</module>
         <module>readerCommand-service</module>
