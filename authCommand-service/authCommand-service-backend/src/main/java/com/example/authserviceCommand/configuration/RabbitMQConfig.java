@@ -39,10 +39,17 @@ public class RabbitMQConfig {
         return new TopicExchange(EXCHANGE_NAME);
     }
 
-    // Binding para a queue de sincronização
+    // Binding para consumir mensagens de todas as instâncias
     @Bean
-    public Binding syncQueueBinding(Queue syncQueue, TopicExchange authExchange) {
-        String routingKey = "user.sync." + instanceId;
+    public Binding globalSyncQueueBinding(Queue syncQueue, TopicExchange authExchange) {
+        String routingKey = "user.sync.#"; // Consome mensagens de qualquer instância
+        return BindingBuilder.bind(syncQueue).to(authExchange).with(routingKey);
+    }
+
+    // Binding para consumir mensagens específicas da instância
+    @Bean
+    public Binding instanceSpecificSyncQueueBinding(Queue syncQueue, TopicExchange authExchange) {
+        String routingKey = "user.sync." + instanceId; // Consome mensagens da própria instância
         return BindingBuilder.bind(syncQueue).to(authExchange).with(routingKey);
     }
 

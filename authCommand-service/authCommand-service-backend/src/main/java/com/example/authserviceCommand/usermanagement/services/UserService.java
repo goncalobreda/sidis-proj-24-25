@@ -94,6 +94,8 @@ public class UserService {
         User user = optionalUser.get();
         user.setFullName(request.getFullName());
         user.setAuthorities(request.getAuthorities().stream().map(Role::new).collect(Collectors.toSet()));
+        logger.info("Iniciando upsert para utilizador: {}", request.getUsername());
+        logger.info("Upsert concluído para utilizador: {}", request.getUsername());
 
         return userRepo.save(user);
     }

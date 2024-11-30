@@ -21,17 +21,23 @@ public class RabbitMQConsumer {
     @Value("${instance.id}") // ID único para identificar a instância (auth1 ou auth2)
     private String instanceId;
 
+    /**
+     * Processa mensagens recebidas para sincronização de utilizadores.
+     *
+     * @param userSyncDTO Mensagem recebida.
+     */
     @RabbitListener(queues = "${rabbitmq.queue.name}")
     public void processMessage(UserSyncDTO userSyncDTO) {
         logger.info("Mensagem recebida do RabbitMQ: {}", userSyncDTO);
 
         // Ignora mensagens enviadas pela mesma instância
-        if (userSyncDTO.getOriginInstanceId() == null || userSyncDTO.getOriginInstanceId().equals(instanceId)) {
-            logger.info("Mensagem ignorada, originInstanceId={} é igual à instanceId={}", userSyncDTO.getOriginInstanceId(), instanceId);
+        if (instanceId.equals(userSyncDTO.getOriginInstanceId())) {
+            logger.info("Mensagem ignorada: originInstanceId={} é igual à instanceId={}", userSyncDTO.getOriginInstanceId(), instanceId);
             return;
         }
 
         try {
+            logger.info("Sincronizando utilizador: {}", userSyncDTO.getUsername());
             userService.upsert(new CreateUserRequest(
                     userSyncDTO.getUsername(),
                     userSyncDTO.getFullName(),
@@ -43,5 +49,11 @@ public class RabbitMQConsumer {
         } catch (Exception e) {
             logger.error("Erro ao sincronizar utilizador: {}", e.getMessage());
         }
+    }
+
+    @RabbitListener(queues = "${rabbitmq.bootstrap.queue.name}")
+    public void processBootstrapMessage(String message) {
+        logger.info("Mensagem de bootstrap recebida: {}", message);
+        // Lógica para processar mensagens de bootstrap
     }
 }
