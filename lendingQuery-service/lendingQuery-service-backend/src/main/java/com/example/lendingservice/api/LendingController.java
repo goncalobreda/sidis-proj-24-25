@@ -53,20 +53,6 @@ public class LendingController {
         return ResponseEntity.ok().eTag(Long.toString(lending.getVersion())).body(lendingViewMapper.toLendingView(lending));
     }
 
-    @Operation(summary = "Creates a new lending")
-    @PostMapping
-    public ResponseEntity<LendingView> create(@RequestBody @Valid CreateLendingRequest request) {
-        final var lending = service.create(request);
-        return ResponseEntity.ok(lendingViewMapper.toLendingView(lending));
-    }
-
-    @Operation(summary = "Partially updates an existing lending")
-    @PatchMapping(value = "/{id1}/{id2}")
-    public ResponseEntity<LendingView> partialUpdate(@PathVariable("id1") final int id1, @PathVariable("id2") final int id2,
-                                                     @Valid @RequestBody final EditLendingRequest resource) {
-        final var lending = service.partialUpdate(id1, id2, resource, 1L);
-        return ResponseEntity.ok().body(lendingViewMapper.toLendingView(lending));
-    }
 
     @Operation(summary = "Lists overdue lendings sorted by their tardiness")
     @GetMapping("/overdue")
@@ -75,7 +61,6 @@ public class LendingController {
         List<LendingView> lendingViews = lendingViewMapper.toLendingView(overdueLendings);
         return ResponseEntity.ok(lendingViews);
     }
-
 
 
     @Operation(summary = "Gets the average lending duration")
@@ -96,31 +81,4 @@ public class LendingController {
 
 
 
-    @PostMapping("/sync")
-    public ResponseEntity<Lending> createLendingSync(@RequestBody Lending lending) {
-        Optional<Lending> existingLending = lendingRepository.findByLendingID(lending.getLendingID());
-
-        if (existingLending.isPresent()) {
-            Lending existing = existingLending.get();
-            // Atualiza os campos modificados, sem validar a versão
-            existing.setBookID(lending.getBookID());
-            existing.setReaderID(lending.getReaderID());
-            existing.setStartDate(lending.getStartDate());
-            existing.setExpectedReturnDate(lending.getExpectedReturnDate());
-            existing.setReturnDate(lending.getReturnDate());
-            existing.setOverdue(lending.isOverdue());
-            existing.setFine(lending.getFine());
-            existing.setNotes(lending.getNotes());
-            lending.updateOverdueStatus();
-
-            existing.setVersion(lending.getVersion());
-
-            Lending updatedLending = lendingRepository.save(existing); // Atualiza a entidade
-            return ResponseEntity.ok(updatedLending);
-        } else {
-            // Se o empréstimo não existir, cria um novo
-            Lending savedLending = lendingRepository.save(lending);
-            return ResponseEntity.ok(savedLending);
-        }
-    }
 }

@@ -36,22 +36,7 @@ public class LendingController {
     @Autowired
     private LendingServiceImpl lendingService;
 
-    @Operation(summary = "Gets all lendings")
-    @ApiResponse(description = "Success", responseCode = "200", content = {
-            @Content(mediaType = "application/json", array = @ArraySchema(schema = @Schema(implementation = LendingView.class)))
-    })
-    @GetMapping
-    public Iterable<LendingView> findAll() {
-        return lendingViewMapper.toLendingView(service.findAll());
-    }
 
-    @Operation(summary = "Gets a specific lending")
-    @GetMapping(value = "/{id1}/{id2}")
-    public ResponseEntity<LendingView> findById(@PathVariable("id1") final int id1, @PathVariable("id2") final int id2) {
-        final var lending = service.findById(id1, id2)
-                .orElseThrow(() -> new NotFoundException(Lending.class, id1 + "/" + id2));
-        return ResponseEntity.ok().eTag(Long.toString(lending.getVersion())).body(lendingViewMapper.toLendingView(lending));
-    }
 
     @Operation(summary = "Creates a new lending")
     @PostMapping
@@ -67,34 +52,6 @@ public class LendingController {
         final var lending = service.partialUpdate(id1, id2, resource, 1L);
         return ResponseEntity.ok().body(lendingViewMapper.toLendingView(lending));
     }
-
-    @Operation(summary = "Lists overdue lendings sorted by their tardiness")
-    @GetMapping("/overdue")
-    public ResponseEntity<List<LendingView>> listOverdueLendingsSortedByTardiness() {
-        List<Lending> overdueLendings = service.getOverdueLendingsSortedByTardiness();
-        List<LendingView> lendingViews = lendingViewMapper.toLendingView(overdueLendings);
-        return ResponseEntity.ok(lendingViews);
-    }
-
-
-
-    @Operation(summary = "Gets the average lending duration")
-    @GetMapping("/average-lending-duration")
-    public ResponseEntity<Double> getAverageLendingDuration() {
-        double avgDuration = service.getAverageLendingDuration();
-        return ResponseEntity.ok(avgDuration);
-    }
-
-
-    @Operation(summary = "Gets the average number of lending per genre of a certain month")
-    @GetMapping("/average-lending-per-genre")
-    public ResponseEntity<Map<String, Double>> getAverageLendingDurationPerGenreAndMonth(
-            @RequestParam int month, @RequestParam int year) {
-        Map<String, Double> result = service.getAverageLendingsPerGenre(month, year);
-        return ResponseEntity.ok(result);
-    }
-
-
 
     @PostMapping("/sync")
     public ResponseEntity<Lending> createLendingSync(@RequestBody Lending lending) {
