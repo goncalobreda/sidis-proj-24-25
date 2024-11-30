@@ -14,7 +14,7 @@
 
     <groupId>org.example</groupId>
     <artifactId>authQuery-service</artifactId>
-    <name>auth-service</name>
+    <name>authQuery-service</name>
     <description>Auth Service for SIDIS project</description>
 
     <dependencyManagement>
