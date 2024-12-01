@@ -11,10 +11,6 @@ public interface AuthorService {
 
     Optional<Author> findByAuthorID(String authorID);
 
-    Author create(CreateAuthorRequest request);
-
-    Author partialUpdate(String authorID, EditAuthorRequest request, long parseLong);
-
     List<CoAuthorDTO> getCoAuthorsAndBooks(String authorId);
 
     Optional<Author> getLastId();

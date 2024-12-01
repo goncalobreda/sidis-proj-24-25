@@ -97,58 +97,6 @@ public class BookServiceImpl implements BookService {
         return bookRepository.findBookByBookID(bookID).isEmpty();
     }
 
-    @Override
-    public Optional<Book> getBookById(final Long bookID) {
-        return bookRepository.findById(bookID);
-    }
-
-    public List<Book> getAll() {
-        return bookRepository.findAll();
-    }
-
-
-    @Override
-    public Optional<Book> getBookByIsbn(final String isbn) {
-        return bookRepository.findByIsbn(isbn);
-    }
-
-    @Override
-    public List<Book> getBookByGenre(final String genre) {
-        return bookRepository.findByGenre(genre);
-    }
-
-    @Override
-    public Genre getGenreByInterest(String interest) {
-        return genreRepository.findByInterest(interest);
-    }
-
-    @Override
-    public List<Book> getBookByTitle(final String title) {
-        return bookRepository.findByTitle(title);
-    }
-
-    @Override
-    public List<Map.Entry<String, Long>> findTop5Genres() {
-        List<Genre> genres = genreRepository.findAll();
-        Map<String, Long> genreBookCount = new HashMap<>();
-
-        for (Genre genre : genres) {
-            long count = genre.getBooks().size();
-            genreBookCount.put(genre.getInterest(), count);
-        }
-
-        return genreBookCount.entrySet()
-                .stream()
-                .sorted(Map.Entry.<String, Long>comparingByValue().reversed())
-                .limit(5)
-                .collect(Collectors.toList());
-    }
-
-
-    @Override
-    public List<Book> getBooksByAuthorId(String authorID) {
-        return bookRepository.findByAuthorId(authorID);
-    }
 
     public void addImageToBook(Long bookID, byte[] image, String contentType) {
         Book book = bookRepository.findBookByBookID(bookID)

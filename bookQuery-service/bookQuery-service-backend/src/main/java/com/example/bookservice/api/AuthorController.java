@@ -70,40 +70,6 @@ public class AuthorController {
         return ResponseEntity.ok(authorView);
     }
 
-    @Operation(summary = "Creates a new Author")
-    @PostMapping
-    @ResponseStatus(HttpStatus.CREATED)
-    public ResponseEntity<Author> create(@Valid @RequestBody final CreateAuthorRequest request) {
-        final var author = authorService.create(request);
-        return ResponseEntity.ok().eTag(Long.toString(author.getVersion())).body(author);
-    }
-
-    @Operation(summary = "Partially updates an existing author")
-    @PatchMapping(value = "/{id1}/{id2}")
-    public ResponseEntity<Author> partialUpdate(final WebRequest request,
-                                                @PathVariable("id1") @Parameter(description = "The id of the author to update") final String id1,
-                                                @PathVariable("id2") final String id2,
-                                                @Valid @RequestBody final EditAuthorRequest resource) {
-        String authorID = id1 + "/" + id2;
-
-        // Validar se o user autenticado tem o mesmo authorID que o authorID acima
-        // se não, é FORBIDDEN
-
-        final String ifMatchValue = request.getHeader(IF_MATCH);
-        if (ifMatchValue == null || ifMatchValue.isEmpty()) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "You must issue a conditional PATCH using 'if-match'");
-        }
-
-        final var author = authorService.partialUpdate(authorID, resource, getVersionFromIfMatchHeader(ifMatchValue));
-        return ResponseEntity.ok().eTag(Long.toString(author.getVersion())).body(author);
-    }
-
-    private Long getVersionFromIfMatchHeader(final String ifMatchHeader) {
-        if (ifMatchHeader.startsWith("\"")) {
-            return Long.parseLong(ifMatchHeader.substring(1, ifMatchHeader.length() - 1));
-        }
-        return Long.parseLong(ifMatchHeader);
-    }
 
 
     //SprintB
@@ -132,11 +98,11 @@ public class AuthorController {
         // Retorna a resposta com o AuthorDTO no corpo
         return ResponseEntity.ok(author);
     }
-
+/*
     @GetMapping("/top5Authors")
     public List<TopAuthorLendingDTO> getTop5Authors() {
         return authorService.findTop5AuthorsPerLending();
     }
-
+*/
 }
 

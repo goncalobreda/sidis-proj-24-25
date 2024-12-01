@@ -28,16 +28,6 @@ public class AuthorServiceImpl implements AuthorService {
     }
 
     @Override
-    public List<Author> findByName(String name) {
-        return authorRepository.findByName(name);
-    }
-
-    @Override
-    public Optional<Author> findByAuthorID(String authorID) {
-        return authorRepository.findByAuthorID(authorID);
-    }
-
-    @Override
     public Author partialUpdate(String authorID, EditAuthorRequest request, long version) {
         Author author = authorRepository.findByAuthorID(authorID)
                 .orElseThrow(() -> new IllegalArgumentException("Author not found"));

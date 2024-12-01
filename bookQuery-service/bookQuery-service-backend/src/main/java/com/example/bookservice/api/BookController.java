@@ -49,18 +49,16 @@ class BookController {
     private static final Logger log = LoggerFactory.getLogger(BookController.class);
     private final BookServiceImpl bookService;
 
-    private final BookRepository bookRepository;
 
     private final BookViewMapper bookMapper;
 
     private final BookImageRepository bookImageRepo;
 
     @Autowired
-    public BookController(BookServiceImpl bookService, BookViewMapper bookMapper, BookImageRepository bookImageRepo, BookRepository bookRepository) {
+    public BookController(BookServiceImpl bookService, BookViewMapper bookMapper, BookImageRepository bookImageRepo) {
         this.bookService = bookService;
         this.bookMapper = bookMapper;
         this.bookImageRepo = bookImageRepo;
-        this.bookRepository = bookRepository;
     }
 
     @Operation(summary = "Get a specific book by genre")
@@ -141,21 +139,6 @@ class BookController {
         return bookMapper.toBookView(books);
     }
 
-    @PutMapping(value = "/{bookID}/image", consumes = "multipart/form-data")
-    public ResponseEntity<Void> addImageToBook(
-            @PathVariable("bookID") @Parameter(description = "The id of the book to update") final Long bookID,
-            @RequestParam("image") MultipartFile imageFile) {
-
-        byte[] imageBytes;
-        try {
-            imageBytes = imageFile.getBytes();
-        } catch (IOException e) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Failed to read image file");
-        }
-
-        bookService.addImageToBook(bookID, imageBytes, imageFile.getContentType());
-        return ResponseEntity.ok().build();
-    }
 
 
     @GetMapping("/images/{imageId}")
@@ -167,65 +150,12 @@ class BookController {
                 .contentType(MediaType.parseMediaType(bookImage.getContentType()))
                 .body(bookImage.getImage());
     }
-
-    @Operation(summary = "Creates a new Book")
-    @PostMapping
-    public ResponseEntity<BookView> createBook(@Valid @RequestBody CreateBookRequest request) {
-        Book createdBook = bookService.create(request);
-        return ResponseEntity.ok(bookMapper.toBookView(createdBook));
-    }
-
-    @PostMapping("/sync")
-    public ResponseEntity<Book> createBookSync(@RequestBody Book book) {
-        // Verifique se o livro já existe na instância atual com base no ISBN ou ID
-        Optional<Book> existingBook = bookRepository.findByIsbn(book.getIsbn());
-
-        if (existingBook.isPresent()) {
-            // Se o livro já existe, atualize-o para evitar duplicação
-            Book existing = existingBook.get();
-            existing.setTitle(book.getTitle());
-            existing.setGenre(book.getGenre());
-            existing.setDescription(book.getDescription());
-            existing.setAuthor(book.getAuthor());
-            existing.setBookImage(book.getBookImage());
-            existing.setVersion(book.getVersion());
-
-            Book updatedBook = bookRepository.save(existing);
-            return ResponseEntity.ok(updatedBook);
-        } else {
-            // Se o livro não existir, crie um novo
-            Book savedBook = bookRepository.save(book);
-            return ResponseEntity.ok(savedBook);
-        }
-    }
-
-
-
-    @PatchMapping(value = "/{bookID}")
-    public ResponseEntity<BookView> partialUpdate(final WebRequest request,
-                                                  @PathVariable("bookID") @Parameter(description = "The id of the book to update") final Long bookID,
-                                                  @Valid @RequestBody final EditBookRequest resource) {
-        final String ifMatchValue = request.getHeader(IF_MATCH);
-        if (ifMatchValue == null || ifMatchValue.isEmpty()) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "You must issue a conditional PATCH using 'if-match'");
-        }
-
-        final var book = bookService.partialUpdate(bookID, resource, getVersionFromIfMatchHeader(ifMatchValue));
-        return ResponseEntity.ok().eTag(Long.toString(book.getVersion())).body(bookMapper.toBookView(book));
-    }
-
-    private Long getVersionFromIfMatchHeader(final String ifMatchHeader) {
-        if (ifMatchHeader.startsWith("\"")) {
-            return Long.parseLong(ifMatchHeader.substring(1, ifMatchHeader.length() - 1));
-        }
-        return Long.parseLong(ifMatchHeader);
-    }
-
+/*
     @Operation(summary = "Get top 5 books by number of lendings")
     @GetMapping("/top5Books")
     public List<BookCountDTO> getTop5Books() {
         return bookService.findTop5Books();
-    }
+    }*/
 }
 
 

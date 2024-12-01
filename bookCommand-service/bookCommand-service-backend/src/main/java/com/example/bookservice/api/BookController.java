@@ -1,6 +1,7 @@
 package com.example.bookservice.api;
 
 import com.example.bookservice.model.*;
+import com.example.bookservice.repositories.BookRepository;
 import com.example.bookservice.service.BookServiceImpl;
 import com.example.bookservice.service.EditBookRequest;
 import com.example.bookservice.api.BookViewMapper;
@@ -16,8 +17,10 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.context.request.WebRequest;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
 
@@ -31,41 +34,15 @@ public class BookController {
     private static final Logger logger = LoggerFactory.getLogger(BookController.class);
     private final BookServiceImpl bookService;
     private final BookViewMapper bookMapper;
+    private final BookRepository bookRepository;
 
     @Autowired
-    public BookController(BookServiceImpl bookService, BookViewMapper bookMapper) {
+    public BookController(BookServiceImpl bookService, BookViewMapper bookMapper, BookRepository bookRepository) {
         this.bookService = bookService;
         this.bookMapper = bookMapper;
+        this.bookRepository = bookRepository;
     }
 
-    @Operation(summary = "Get a specific book by genre")
-    @GetMapping(value = "/genre/{genre}")
-    public List<BookView> findByGenre(
-            @PathVariable("genre") @Parameter(description = "The genre of the book to find") final String genre) {
-        return bookMapper.toBookView(bookService.getBookByGenre(genre));
-    }
-
-    @Operation(summary = "Get a specific book by ID")
-    @GetMapping(value = "/id/{id}")
-    public ResponseEntity<BookView> findBookByBookID(
-            @PathVariable("id") @Parameter(description = "The ID of the book to find") final Long id) {
-        return bookService.getBookById(id)
-                .map(book -> ResponseEntity.ok(bookMapper.toBookView(book)))
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Book not found"));
-    }
-
-    @Operation(summary = "Get a specific book by title")
-    @GetMapping(value = "/title/{title}")
-    public List<BookView> findByTitle(
-            @PathVariable("title") @Parameter(description = "The title of the book to find") final String title) {
-        return bookMapper.toBookView(bookService.getBookByTitle(title));
-    }
-
-    @Operation(summary = "Get all books")
-    @GetMapping
-    public Iterable<BookView> getAll() {
-        return bookMapper.toBookView(bookService.getAll());
-    }
 
     @Operation(summary = "Creates a new Book")
     @PostMapping
@@ -88,5 +65,48 @@ public class BookController {
         Book updatedBook = bookService.partialUpdate(bookID, resource, Long.parseLong(ifMatchValue));
         return ResponseEntity.ok().eTag(Long.toString(updatedBook.getVersion())).body(bookMapper.toBookView(updatedBook));
     }
+
+    @PutMapping(value = "/{bookID}/image", consumes = "multipart/form-data")
+    public ResponseEntity<Void> addImageToBook(
+            @PathVariable("bookID") @Parameter(description = "The id of the book to update") final Long bookID,
+            @RequestParam("image") MultipartFile imageFile) {
+
+        byte[] imageBytes;
+        try {
+            imageBytes = imageFile.getBytes();
+        } catch (IOException e) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Failed to read image file");
+        }
+
+        bookService.addImageToBook(bookID, imageBytes, imageFile.getContentType());
+        return ResponseEntity.ok().build();
+    }
+
+
+    @PostMapping("/sync")
+    public ResponseEntity<Book> createBookSync(@RequestBody Book book) {
+        // Verifique se o livro já existe na instância atual com base no ISBN ou ID
+        Optional<Book> existingBook = bookRepository.findByIsbn(book.getIsbn());
+
+        if (existingBook.isPresent()) {
+            // Se o livro já existe, atualize-o para evitar duplicação
+            Book existing = existingBook.get();
+            existing.setTitle(book.getTitle());
+            existing.setGenre(book.getGenre());
+            existing.setDescription(book.getDescription());
+            existing.setAuthor(book.getAuthor());
+            existing.setBookImage(book.getBookImage());
+            existing.setVersion(book.getVersion());
+
+            Book updatedBook = bookRepository.save(existing);
+            return ResponseEntity.ok(updatedBook);
+        } else {
+            // Se o livro não existir, crie um novo
+            Book savedBook = bookRepository.save(book);
+            return ResponseEntity.ok(savedBook);
+        }
+    }
+
+
 
 }

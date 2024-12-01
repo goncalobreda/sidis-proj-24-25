@@ -33,21 +33,6 @@ public class AuthorController {
         this.authorService = authorService;
     }
 
-    @Operation(summary = "Gets a specific Author by Name")
-    @GetMapping(value = "/name/{name}")
-    public List<Author> findByName(
-            @PathVariable("name") @Parameter(description = "The Name of the Author to find") final String name) {
-        return authorService.findByName(name);
-    }
-
-    @Operation(summary = "Gets a specific Author by id")
-    @GetMapping(value = "/id/{id}")
-    public ResponseEntity<Author> findByAuthorID(
-            @PathVariable("id") @Parameter(description = "The id of the author to find") final String authorID) {
-        return authorService.findByAuthorID(authorID)
-                .map(ResponseEntity::ok)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Author not found"));
-    }
 
     @Operation(summary = "Creates a new Author")
     @PostMapping

@@ -48,8 +48,10 @@ public class RabbitMQConsumer {
     }
 
     private void saveOrUpdateBook(BookEventDTO bookEventDTO) {
-        Genre genre = genreRepository.findByInterest(bookEventDTO.getGenre())
-                .orElseThrow(() -> new IllegalArgumentException("Genre not found"));
+        Genre genre = genreRepository.findByInterest(bookEventDTO.getGenre());
+        if (genre == null) {
+            throw new IllegalArgumentException("Genre not found: " + bookEventDTO.getGenre());
+        }
 
         List<Author> authors = bookEventDTO.getAuthorIds().stream()
                 .map(authorId -> authorRepository.findByAuthorID(authorId)

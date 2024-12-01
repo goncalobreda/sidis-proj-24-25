@@ -1,7 +1,6 @@
 package com.example.bookservice.service;
 
-import com.example.bookservice.client.LendingDTO;
-import com.example.bookservice.client.LendingServiceClient;
+
 import com.example.bookservice.model.*;
 import com.example.bookservice.repositories.AuthorRepository;
 import com.example.bookservice.repositories.BookRepository;
@@ -22,29 +21,13 @@ public class AuthorServiceImpl implements AuthorService {
 
     private final BookRepository bookRepository;
 
-    private final LendingServiceClient lendingServiceClient;
 
     private final BookService bookService;
 
-    public AuthorServiceImpl(AuthorRepository authorRepository, BookRepository bookRepository, LendingServiceClient lendingServiceClient, BookService bookService) {
+    public AuthorServiceImpl(AuthorRepository authorRepository, BookRepository bookRepository, BookService bookService) {
         this.authorRepository = authorRepository;
         this.bookRepository = bookRepository;
-        this.lendingServiceClient = lendingServiceClient;
         this.bookService = bookService;
-    }
-
-    @Override
-    public Author create(CreateAuthorRequest request) {
-        if (request.getBiography() == null || request.getBiography().length() > 4096) {
-            throw new IllegalArgumentException("The biography cannot be null, nor have more than 4096 characters.");
-        }
-        if (request.getName() == null || request.getName().length() > 150) {
-            throw new IllegalArgumentException("The name cannot be null, nor have more than 150 characters.");
-        }
-
-        final Author author = new Author(request.getName(), request.getBiography());
-        author.setUniqueAuthorID();
-        return authorRepository.save(author);
     }
 
     @Override
@@ -57,14 +40,6 @@ public class AuthorServiceImpl implements AuthorService {
         return authorRepository.findByAuthorID(authorID);
     }
 
-    @Override
-    public Author partialUpdate(final String authorID, final EditAuthorRequest request, final long desiredVersion) {
-        final var author = authorRepository.findByAuthorID(authorID)
-                .orElseThrow(() -> new NotFoundException("Cannot update an object that does not yet exist"));
-
-        author.applyPatch(desiredVersion, request.getName(), request.getBiography());
-        return authorRepository.save(author);
-    }
 
 
     @Override
@@ -141,7 +116,7 @@ public class AuthorServiceImpl implements AuthorService {
     public void saveAuthor(Author author) {
         authorRepository.save(author);
     }
-
+/*
     public List<TopAuthorLendingDTO> findTop5AuthorsPerLending() {
         List<LendingDTO> lendings = lendingServiceClient.getAllLendings();
 
@@ -164,7 +139,7 @@ public class AuthorServiceImpl implements AuthorService {
         return top5Authors.stream()
                 .map(entry -> new TopAuthorLendingDTO(entry.getKey().getAuthorID(), entry.getKey().getName(), entry.getValue()))
                 .collect(Collectors.toList());
-    }
+    }*/
 
     @Override
     public Optional<Author> getLastId() {

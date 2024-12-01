@@ -98,7 +98,7 @@ public class SecurityConfig {
 
 
 
-
+/*
         // Our public endpoints
                 .requestMatchers("/api/public/**").permitAll() // public assets & end-points
                 .requestMatchers(HttpMethod.GET, "/api/books/top5Books").hasRole(Role.LIBRARIAN) // read-only books
@@ -122,7 +122,7 @@ public class SecurityConfig {
 
                 .requestMatchers(HttpMethod.PATCH, "/api/books/{bookID}").hasRole(Role.LIBRARIAN) // read-only books
                 .requestMatchers(HttpMethod.PATCH, "/api/authors/{id1}/{id2}").hasRole(Role.LIBRARIAN) // read-only books
-
+*/
 
                 // Our private endpoints
                 .requestMatchers("/api/admin/librarian/**").permitAll() // lib management
