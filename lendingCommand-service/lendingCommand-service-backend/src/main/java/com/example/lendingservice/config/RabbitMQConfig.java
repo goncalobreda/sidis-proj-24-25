@@ -1,6 +1,9 @@
-package com.example.authserviceCommand.configuration;
+package com.example.lendingservice.configuration;
 
-import org.springframework.amqp.core.*;
+import org.springframework.amqp.core.Binding;
+import org.springframework.amqp.core.BindingBuilder;
+import org.springframework.amqp.core.Queue;
+import org.springframework.amqp.core.TopicExchange;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.amqp.support.converter.Jackson2JsonMessageConverter;
@@ -20,9 +23,9 @@ public class RabbitMQConfig {
     @Value("${instance.id}")
     private String instanceId;
 
-    public static final String EXCHANGE_NAME = "auth-service-exchange";
+    public static final String EXCHANGE_NAME = "lending-service-exchange";
 
-    // Queue para sincronização de utilizadores
+    // Queue para sincronização de empréstimos
     @Bean
     public Queue syncQueue() {
         return new Queue(queueName, true);
@@ -35,29 +38,22 @@ public class RabbitMQConfig {
     }
 
     @Bean
-    public TopicExchange authExchange() {
+    public TopicExchange lendingExchange() {
         return new TopicExchange(EXCHANGE_NAME);
     }
 
-    // Binding para consumir mensagens de todas as instâncias
+    // Binding para a queue de sincronização
     @Bean
-    public Binding globalSyncQueueBinding(Queue syncQueue, TopicExchange authExchange) {
-        String routingKey = "user.sync.#"; // Consome mensagens de qualquer instância
-        return BindingBuilder.bind(syncQueue).to(authExchange).with(routingKey);
-    }
-
-    // Binding para consumir mensagens específicas da instância
-    @Bean
-    public Binding instanceSpecificSyncQueueBinding(Queue syncQueue, TopicExchange authExchange) {
-        String routingKey = "user.sync." + instanceId; // Consome mensagens da própria instância
-        return BindingBuilder.bind(syncQueue).to(authExchange).with(routingKey);
+    public Binding syncQueueBinding(Queue syncQueue, TopicExchange lendingExchange) {
+        String routingKey = "lending.sync." + instanceId;
+        return BindingBuilder.bind(syncQueue).to(lendingExchange).with(routingKey);
     }
 
     // Binding para a queue de bootstrap
     @Bean
-    public Binding bootstrapQueueBinding(Queue bootstrapQueue, TopicExchange authExchange) {
+    public Binding bootstrapQueueBinding(Queue bootstrapQueue, TopicExchange lendingExchange) {
         String routingKey = "bootstrap.sync." + instanceId;
-        return BindingBuilder.bind(bootstrapQueue).to(authExchange).with(routingKey);
+        return BindingBuilder.bind(bootstrapQueue).to(lendingExchange).with(routingKey);
     }
 
     @Bean

@@ -15,7 +15,7 @@
 
     <groupId>org.example</groupId>
     <artifactId>bookQuery-service</artifactId>
-    <name>book-service</name>
+    <name>bookQuery-service</name>
     <description>Book service for Spring Boot project</description>
 
     <dependencyManagement>
