@@ -4,12 +4,17 @@ import com.example.authserviceCommand.exceptions.NotFoundException;
 import com.example.authserviceCommand.usermanagement.model.User;
 import com.example.authserviceCommand.usermanagement.services.Page;
 import com.example.authserviceCommand.usermanagement.services.SearchUsersQuery;
+import org.springframework.context.annotation.Primary;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.repository.PagingAndSortingRepository;
+import org.springframework.stereotype.Repository;
 
 import java.util.List;
 import java.util.Optional;
 
 
-public interface UserRepository {
+
+public interface UserRepository extends JpaRepository<User, Long> {
 
     <S extends User> List<S> saveAll(Iterable<S> entities);
 
@@ -25,5 +30,4 @@ public interface UserRepository {
 
     Optional<User> findByUsername(String username);
 
-    List<User> searchUsers(Page page, SearchUsersQuery query);
 }

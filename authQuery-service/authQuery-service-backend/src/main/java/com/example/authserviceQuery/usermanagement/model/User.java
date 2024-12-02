@@ -81,7 +81,7 @@ public class User implements UserDetails {
     @Getter
     private final Set<Role> authorities = new HashSet<>();
 
-    protected User() {
+    public User() {
         // for ORM only
     }
 
@@ -145,4 +145,9 @@ public class User implements UserDetails {
     public void setPhoneNumber(String phoneNumber) {
         this.phoneNumber = phoneNumber;
     }
+
+    public void setUsername(String username) {
+        this.username = username;
+    }
+
 }

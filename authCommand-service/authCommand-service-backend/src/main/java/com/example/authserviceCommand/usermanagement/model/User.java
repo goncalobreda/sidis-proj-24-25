@@ -77,9 +77,11 @@ public class User implements UserDetails {
     @Setter
     private String phoneNumber;
 
-    @ElementCollection
+    @ElementCollection(fetch = FetchType.EAGER)
     @Getter
     private final Set<Role> authorities = new HashSet<>();
+
+    private String instanceId;
 
     protected User() {
         // for ORM only
@@ -144,5 +146,13 @@ public class User implements UserDetails {
 
     public void setPhoneNumber(String phoneNumber) {
         this.phoneNumber = phoneNumber;
+    }
+
+    public String getInstanceId() {
+        return this.instanceId;
+    }
+
+    public void setInstanceId(String instanceId) {
+        this.instanceId = instanceId;
     }
 }

@@ -56,7 +56,12 @@ public class UserService {
         return savedUser;
     }
 
-    private void syncUserWithOtherInstance(User user) {
+    public void syncUserWithOtherInstance(User user) {
+        if (instanceId.equals(user.getUsername())) {
+            logger.info("Ignorando sincronização para a própria instância: {}", instanceId);
+            return;
+        }
+
         logger.info("Sincronizando utilizador da instância {} para outra instância", instanceId);
 
         Set<String> authoritiesAsString = user.getAuthorities().stream()
@@ -70,18 +75,37 @@ public class UserService {
                 user.isEnabled(),
                 authoritiesAsString,
                 instanceId,
-                user.getPhoneNumber()
+                user.getPhoneNumber(),
+                generateMessageId() // Novo campo messageId
         );
 
         rabbitMQProducer.sendMessage("user.sync.create", userSyncDTO);
+
+        logger.info("Mensagem de sincronização enviada para o RabbitMQ: {}", userSyncDTO);
     }
+
+    private String generateMessageId() {
+        return java.util.UUID.randomUUID().toString();
+    }
+
+
+
+
+
 
     @Transactional
     public User update(final Long id, final EditUserRequest request) {
         final User user = userRepo.getById(id);
         userEditMapper.update(request, user);
 
-        return userRepo.save(user);
+        User updatedUser = userRepo.save(user);
+
+        logger.info("Utilizador atualizado: {}", updatedUser);
+
+        // Sincronizar após a atualização
+        syncUserWithOtherInstance(updatedUser);
+
+        return updatedUser;
     }
 
     @Transactional
@@ -94,16 +118,31 @@ public class UserService {
         User user = optionalUser.get();
         user.setFullName(request.getFullName());
         user.setAuthorities(request.getAuthorities().stream().map(Role::new).collect(Collectors.toSet()));
+
         logger.info("Iniciando upsert para utilizador: {}", request.getUsername());
+
+        User upsertedUser = userRepo.save(user);
+
+        // Sincronizar após o upsert
+        syncUserWithOtherInstance(upsertedUser);
+
         logger.info("Upsert concluído para utilizador: {}", request.getUsername());
 
-        return userRepo.save(user);
+        return upsertedUser;
     }
 
     @Transactional
     public User delete(final Long id) {
         final User user = userRepo.getById(id);
         user.setEnabled(false);
-        return userRepo.save(user);
+
+        User disabledUser = userRepo.save(user);
+
+        logger.info("Utilizador desativado: {}", disabledUser);
+
+        // Sincronizar após desativação
+        syncUserWithOtherInstance(disabledUser);
+
+        return disabledUser;
     }
 }

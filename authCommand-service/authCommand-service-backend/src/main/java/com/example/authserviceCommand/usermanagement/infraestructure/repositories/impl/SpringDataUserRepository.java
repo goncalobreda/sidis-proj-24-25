@@ -16,6 +16,7 @@ import org.springframework.cache.annotation.CacheConfig;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.cache.annotation.Caching;
+import org.springframework.context.annotation.Primary;
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.stereotype.Repository;
 import org.springframework.util.StringUtils;
@@ -27,6 +28,7 @@ import java.util.Optional;
 
 @Repository
 @CacheConfig(cacheNames = "users")
+@Primary
 public interface SpringDataUserRepository extends UserRepository, UserRepoCustom, CrudRepository<User, Long> {
 
     @Override
@@ -34,15 +36,15 @@ public interface SpringDataUserRepository extends UserRepository, UserRepoCustom
     <S extends User> List<S> saveAll(Iterable<S> entities);
 
     @Override
-    @Caching(evict = { @CacheEvict(key = "#p0.id", condition = "#p0.id != null"),
-            @CacheEvict(key = "#p0.username", condition = "#p0.username != null") })
+    @Caching(evict = {
+            @CacheEvict(key = "#p0.id", condition = "#p0.id != null"),
+            @CacheEvict(key = "#p0.username", condition = "#p0.username != null")
+    })
     <S extends User> S save(S entity);
-
 
     @Override
     @Cacheable
     Optional<User> findById(Long objectId);
-
 
     @Cacheable
     default User getById(final Long id) {
@@ -56,6 +58,7 @@ public interface SpringDataUserRepository extends UserRepository, UserRepoCustom
 }
 
 
+
 interface UserRepoCustom {
 
     List<User> searchUsers(Page page, SearchUsersQuery query);
@@ -65,8 +68,6 @@ interface UserRepoCustom {
 @RequiredArgsConstructor
 class UserRepoCustomImpl implements UserRepoCustom {
 
-    // get the underlying JPA Entity Manager via spring thru constructor dependency
-    // injection
     private final EntityManager em;
 
     @Override
@@ -85,7 +86,6 @@ class UserRepoCustomImpl implements UserRepoCustom {
             where.add(cb.like(root.get("fullName"), "%" + query.getFullName() + "%"));
         }
 
-        // search using OR
         if (!where.isEmpty()) {
             cq.where(cb.or(where.toArray(new Predicate[0])));
         }
@@ -99,3 +99,4 @@ class UserRepoCustomImpl implements UserRepoCustom {
         return q.getResultList();
     }
 }
+

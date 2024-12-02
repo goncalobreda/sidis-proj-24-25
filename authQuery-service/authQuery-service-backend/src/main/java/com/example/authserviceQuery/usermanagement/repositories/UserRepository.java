@@ -12,6 +12,9 @@ public interface UserRepository {
 
     Optional<User> findById(Long objectId);
 
+    <S extends User> S save(S entity);
+
+
     default User getById(final Long id) {
         final Optional<User> maybeUser = findById(id);
         // throws 404 Not Found if the user does not exist or is not enabled

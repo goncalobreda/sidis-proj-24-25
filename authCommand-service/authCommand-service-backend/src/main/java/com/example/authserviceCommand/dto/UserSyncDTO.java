@@ -2,6 +2,9 @@ package com.example.authserviceCommand.dto;
 
 import java.io.Serializable;
 import java.util.Set;
+import java.util.UUID;
+
+import com.example.authserviceCommand.usermanagement.services.CreateUserRequest;
 
 public class UserSyncDTO implements Serializable {
     private static final long serialVersionUID = 1L;
@@ -13,6 +16,7 @@ public class UserSyncDTO implements Serializable {
     private Set<String> authorities;
     private String originInstanceId; // Novo campo para identificar a origem
     private String phoneNumber;
+    private String messageId; // Novo campo
 
     // Construtor vazio
     public UserSyncDTO() {
@@ -20,7 +24,7 @@ public class UserSyncDTO implements Serializable {
     }
 
     // Construtor com argumentos
-    public UserSyncDTO(String username, String fullName, String password, boolean enabled, Set<String> authorities, String originInstanceId, String phoneNumber) {
+    public UserSyncDTO(String username, String fullName, String password, boolean enabled, Set<String> authorities, String originInstanceId, String phoneNumber, String messageId) {
         this.username = username;
         this.fullName = fullName;
         this.password = password;
@@ -28,6 +32,15 @@ public class UserSyncDTO implements Serializable {
         this.authorities = authorities;
         this.originInstanceId = originInstanceId;
         this.phoneNumber = phoneNumber;
+        this.messageId = messageId != null ? messageId : UUID.randomUUID().toString();    }
+
+    public CreateUserRequest toCreateUserRequest() {
+        return new CreateUserRequest(
+                this.username,
+                this.fullName,
+                this.password,
+                this.phoneNumber // Incluindo phoneNumber no mapeamento
+        );
     }
 
     // Getters e Setters
@@ -52,4 +65,12 @@ public class UserSyncDTO implements Serializable {
     public String getPhoneNumber() { return phoneNumber; }
     public void setPhoneNumber(String phoneNumber) { this.phoneNumber = phoneNumber; }
 
+
+    public String getMessageId() {
+        return messageId;
+    }
+
+    public void setMessageId(String messageId) {
+        this.messageId = messageId;
+    }
 }

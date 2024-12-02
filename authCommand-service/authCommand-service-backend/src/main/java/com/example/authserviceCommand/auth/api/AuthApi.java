@@ -59,14 +59,19 @@ public class AuthApi {
         User newUser = userService.create(requestDTO.toCreateUserRequest());
 
         try {
+            // Garantir sincronização entre instâncias
+            userService.syncUserWithOtherInstance(newUser);
+
+            // Registrar o leitor no serviço externo
             externalServiceHelper.registerReaderInService(requestDTO);
         } catch (Exception e) {
-            logger.error("Erro ao registar o leitor nas instâncias do Reader Service: {}", e.getMessage());
-            return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body("Erro ao registrar o leitor nas instâncias do Reader Service.");
+            logger.error("Erro ao processar o registro do leitor: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body("Erro ao registrar o leitor.");
         }
 
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }
+
 
     @PostMapping("/sync")
     public ResponseEntity<?> syncUser(@RequestBody UserSyncDTO userSyncDTO) {

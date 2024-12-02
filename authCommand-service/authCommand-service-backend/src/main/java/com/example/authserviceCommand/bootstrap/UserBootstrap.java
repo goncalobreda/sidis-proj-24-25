@@ -6,11 +6,13 @@ import com.example.authserviceCommand.dto.UserSyncDTO;
 import com.example.authserviceCommand.messaging.RabbitMQProducer;
 import com.example.authserviceCommand.usermanagement.repositories.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.hibernate.Hibernate;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
+import java.util.List;
 import java.util.stream.Collectors;
 
 @Component
@@ -25,20 +27,24 @@ public class UserBootstrap implements CommandLineRunner {
     private String instanceId;
 
     @Override
-    public void run(final String... args) throws Exception {
-        System.out.println("Bootstrap running...");
+    public void run(final String... args) {
+        System.out.println("Bootstrap running for instance: " + instanceId);
 
-        // Criação e sincronização dos utilizadores
         createAndSyncUser("librarian1@mail.com", "pass1");
         createAndSyncUser("librarian2@mail.com", "pass2");
 
-        // Após sincronizar os utilizadores, enviar uma mensagem de bootstrap para AuthQuery
-        sendBootstrapSignal();
+        if ("command.auth1".equals(instanceId)) {
+            System.out.println("Instância 'command.auth1'. Enviando sinal de bootstrap para RabbitMQ...");
+            sendBootstrapSignal();
+        } else {
+            System.out.println("Instância '" + instanceId + "'. Realizando apenas bootstrap local.");
+            performLocalBootstrap();
+        }
     }
 
     private void createAndSyncUser(String email, String password) {
         if (userRepo.findByUsername(email).isEmpty()) {
-            final var user = new User(email, encoder.encode(password));
+            User user = new User(email, encoder.encode(password));
             user.addAuthority(new Role(Role.LIBRARIAN));
             User savedUser = userRepo.save(user);
 
@@ -49,18 +55,46 @@ public class UserBootstrap implements CommandLineRunner {
                     savedUser.isEnabled(),
                     savedUser.getAuthorities().stream().map(Role::getAuthority).collect(Collectors.toSet()),
                     instanceId,
-                    savedUser.getPhoneNumber()
+                    savedUser.getPhoneNumber(),
+                    generateMessageId() // Novo campo messageId
             );
 
-            String routingKey = "user.sync." + instanceId;
-            rabbitMQProducer.sendMessage(routingKey, userSyncDTO);
-            System.out.println("Utilizador sincronizado: " + savedUser.getUsername());
+            if ("command.auth1".equals(instanceId)) {
+                rabbitMQProducer.sendMessage("user.sync.create", userSyncDTO);
+                System.out.println("Utilizador sincronizado via RabbitMQ: " + savedUser.getUsername());
+            } else {
+                System.out.println("Utilizador criado apenas localmente: " + savedUser.getUsername());
+            }
         }
     }
 
+    private String generateMessageId() {
+        return java.util.UUID.randomUUID().toString();
+    }
+
+
     private void sendBootstrapSignal() {
-        String bootstrapMessage = "Bootstrap completo pela instância " + instanceId;
-        rabbitMQProducer.sendBootstrapMessage(bootstrapMessage);
-        System.out.println("Sinal de bootstrap enviado.");
+        List<UserSyncDTO> bootstrapUsers = userRepo.findAll().stream()
+                .peek(user -> Hibernate.initialize(user.getAuthorities())) // Inicializa as autoridades
+                .map(user -> new UserSyncDTO(
+                        user.getUsername(),
+                        user.getFullName(),
+                        user.getPassword(),
+                        user.isEnabled(),
+                        user.getAuthorities().stream().map(Role::getAuthority).collect(Collectors.toSet()),
+                        instanceId,
+                        user.getPhoneNumber(),
+                        generateMessageId() // Adicionado messageId
+                ))
+                .collect(Collectors.toList());
+
+        rabbitMQProducer.sendBootstrapMessage(bootstrapUsers);
+        System.out.println("Sinal de bootstrap enviado com lista de utilizadores.");
+    }
+
+
+    private void performLocalBootstrap() {
+        userRepo.findAll().forEach(user -> System.out.println("Utilizador carregado localmente: " + user.getUsername()));
+        System.out.println("Bootstrap local concluído para instância: " + instanceId);
     }
 }

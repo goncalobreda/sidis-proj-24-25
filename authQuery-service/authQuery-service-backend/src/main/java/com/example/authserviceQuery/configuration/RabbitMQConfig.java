@@ -42,14 +42,16 @@ public class RabbitMQConfig {
     // Binding para a queue de sincronização
     @Bean
     public Binding syncQueueBinding(Queue syncQueue, TopicExchange authExchange) {
-        String routingKey = "user.sync." + instanceId;
+        String routingKey = "user.sync.#"; // Aceita qualquer instância
         return BindingBuilder.bind(syncQueue).to(authExchange).with(routingKey);
     }
 
+
     // Binding para a queue de bootstrap
+
     @Bean
     public Binding bootstrapQueueBinding(Queue bootstrapQueue, TopicExchange authExchange) {
-        String routingKey = "bootstrap.sync." + instanceId;
+        String routingKey = "bootstrap.sync.query";
         return BindingBuilder.bind(bootstrapQueue).to(authExchange).with(routingKey);
     }
 

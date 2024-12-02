@@ -14,7 +14,7 @@ public class RabbitMQConfig {
     @Value("${rabbitmq.queue.name}")
     private String queueName;
 
-    @Value("${rabbitmq.bootstrap.queue.name}")
+    @Value("${rabbitmq.bootstrap.queue.name:}")
     private String bootstrapQueueName;
 
     @Value("${instance.id}")
@@ -22,16 +22,17 @@ public class RabbitMQConfig {
 
     public static final String EXCHANGE_NAME = "auth-service-exchange";
 
-    // Queue para sincronização de utilizadores
     @Bean
     public Queue syncQueue() {
         return new Queue(queueName, true);
     }
 
-    // Queue para bootstrap
     @Bean
     public Queue bootstrapQueue() {
-        return new Queue(bootstrapQueueName, true);
+        if ("command.auth1".equals(instanceId)) {
+            return new Queue(bootstrapQueueName, true);
+        }
+        return null;
     }
 
     @Bean
@@ -39,25 +40,27 @@ public class RabbitMQConfig {
         return new TopicExchange(EXCHANGE_NAME);
     }
 
-    // Binding para consumir mensagens de todas as instâncias
     @Bean
-    public Binding globalSyncQueueBinding(Queue syncQueue, TopicExchange authExchange) {
-        String routingKey = "user.sync.#"; // Consome mensagens de qualquer instância
+    public Binding syncQueueBinding(Queue syncQueue, TopicExchange authExchange) {
+        String routingKey = "user.sync.#"; // Qualquer instância pode escutar mensagens de sincronização
         return BindingBuilder.bind(syncQueue).to(authExchange).with(routingKey);
     }
 
-    // Binding para consumir mensagens específicas da instância
+
     @Bean
-    public Binding instanceSpecificSyncQueueBinding(Queue syncQueue, TopicExchange authExchange) {
-        String routingKey = "user.sync." + instanceId; // Consome mensagens da própria instância
+    public Binding registerQueueBinding(Queue syncQueue, TopicExchange authExchange) {
+        String routingKey = "user.register.#";
         return BindingBuilder.bind(syncQueue).to(authExchange).with(routingKey);
     }
 
-    // Binding para a queue de bootstrap
+
     @Bean
     public Binding bootstrapQueueBinding(Queue bootstrapQueue, TopicExchange authExchange) {
-        String routingKey = "bootstrap.sync." + instanceId;
-        return BindingBuilder.bind(bootstrapQueue).to(authExchange).with(routingKey);
+        if ("command.auth1".equals(instanceId) && bootstrapQueue != null) {
+            String routingKey = "bootstrap.sync.query";
+            return BindingBuilder.bind(bootstrapQueue).to(authExchange).with(routingKey);
+        }
+        return null;
     }
 
     @Bean
