@@ -1,16 +1,23 @@
 package com.example.authserviceCommand.dto;
 
 import com.example.authserviceCommand.usermanagement.services.CreateUserRequest;
+import com.example.authserviceCommand.usermanagement.services.UserService;
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.ValidationException;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Set;
 
 @Data
 @Schema(description = "DTO para registrar um novo leitor")
 public class CreateReaderRequestDTO {
+
+    private static final Logger logger = LoggerFactory.getLogger(UserService.class);
+
 
     @Email
     @NotBlank
@@ -43,12 +50,20 @@ public class CreateReaderRequestDTO {
     private boolean GDPR;
 
     public CreateUserRequest toCreateUserRequest() {
+        if (this.email == null || this.email.isBlank()) {
+            throw new ValidationException("O campo 'email' é obrigatório e não pode estar vazio.");
+        }
+
+        logger.info("Convertendo CreateReaderRequestDTO para CreateUserRequest com username: {}", this.email);
+
         return new CreateUserRequest(
-                this.email,
+                this.email, // email como username
                 this.fullName,
                 this.password,
-                this.phoneNumber // Incluindo phoneNumber no mapeamento
+                this.phoneNumber
         );
     }
+
+
 
 }

@@ -36,28 +36,40 @@ public class UserService {
     @Transactional
     public User create(final CreateUserRequest request) {
         if (userRepo.findByUsername(request.getUsername()).isPresent()) {
-            throw new ConflictException("Username already exists!");
-        }
-        if (!request.getPassword().equals(request.getRePassword())) {
-            throw new ValidationException("Passwords don't match!");
+            throw new ConflictException("O nome de utilizador já existe!");
         }
 
+        if (!request.getPassword().equals(request.getRePassword())) {
+            throw new ValidationException("As senhas não coincidem!");
+        }
+
+        if (request.getUsername() == null || request.getUsername().isBlank()) {
+            throw new ValidationException("O nome de utilizador não pode estar vazio.");
+        }
+
+        logger.info("Criando utilizador com username: {}", request.getUsername());
+
         final User user = userEditMapper.create(request);
-        user.setPhoneNumber(request.getPhoneNumber());
+
+        logger.info("Utilizador mapeado com username: {}", user.getUsername());
+
         user.setPassword(passwordEncoder.encode(request.getPassword()));
         user.addAuthority(new Role("READER"));
+        user.setPhoneNumber(request.getPhoneNumber());
 
         User savedUser = userRepo.save(user);
 
-        logger.info("User salvo no banco de dados: {}", savedUser);
-
-        syncUserWithOtherInstance(savedUser);
+        logger.info("Utilizador salvo no banco de dados: {}", savedUser);
 
         return savedUser;
     }
 
+
+
+
     public void syncUserWithOtherInstance(User user) {
-        if (instanceId.equals(user.getUsername())) {
+        // Verificar se a instância de origem é a mesma que está processando
+        if (instanceId.equals(user.getInstanceId())) {
             logger.info("Ignorando sincronização para a própria instância: {}", instanceId);
             return;
         }
@@ -76,13 +88,14 @@ public class UserService {
                 authoritiesAsString,
                 instanceId,
                 user.getPhoneNumber(),
-                generateMessageId() // Novo campo messageId
+                generateMessageId() // Gerar um ID único para a mensagem
         );
 
         rabbitMQProducer.sendMessage("user.sync.create", userSyncDTO);
 
         logger.info("Mensagem de sincronização enviada para o RabbitMQ: {}", userSyncDTO);
     }
+
 
     private String generateMessageId() {
         return java.util.UUID.randomUUID().toString();
@@ -109,27 +122,48 @@ public class UserService {
     }
 
     @Transactional
-    public User upsert(final CreateUserRequest request) {
-        Optional<User> optionalUser = userRepo.findByUsername(request.getUsername());
-        if (optionalUser.isEmpty()) {
-            return create(request);
+    public void upsert(UserSyncDTO userSyncDTO) {
+        // Verificar se a mensagem é da própria instância para evitar loops
+        if (instanceId.equals(userSyncDTO.getOriginInstanceId())) {
+            logger.info("Mensagem de sincronização ignorada para a própria instância: {}", instanceId);
+            return;
         }
 
-        User user = optionalUser.get();
-        user.setFullName(request.getFullName());
-        user.setAuthorities(request.getAuthorities().stream().map(Role::new).collect(Collectors.toSet()));
+        Optional<User> optionalUser = userRepo.findByUsername(userSyncDTO.getUsername());
+        User user;
 
-        logger.info("Iniciando upsert para utilizador: {}", request.getUsername());
+        if (optionalUser.isPresent()) {
+            // Atualizar utilizador existente
+            user = optionalUser.get();
+            user.setFullName(userSyncDTO.getFullName());
+            user.setEnabled(userSyncDTO.isEnabled());
+            user.setPhoneNumber(userSyncDTO.getPhoneNumber());
+            user.setAuthorities(
+                    userSyncDTO.getAuthorities().stream()
+                            .map(Role::new)
+                            .collect(Collectors.toSet())
+            );
+            logger.info("Atualizando utilizador existente: {}", userSyncDTO.getUsername());
+        } else {
+            // Criar novo utilizador
+            user = new User(userSyncDTO.getUsername(), userSyncDTO.getPassword());
+            user.setFullName(userSyncDTO.getFullName());
+            user.setEnabled(userSyncDTO.isEnabled());
+            user.setPhoneNumber(userSyncDTO.getPhoneNumber());
+            user.setAuthorities(
+                    userSyncDTO.getAuthorities().stream()
+                            .map(Role::new)
+                            .collect(Collectors.toSet())
+            );
+            logger.info("Criando novo utilizador: {}", userSyncDTO.getUsername());
+        }
 
-        User upsertedUser = userRepo.save(user);
-
-        // Sincronizar após o upsert
-        syncUserWithOtherInstance(upsertedUser);
-
-        logger.info("Upsert concluído para utilizador: {}", request.getUsername());
-
-        return upsertedUser;
+        userRepo.save(user);
+        logger.info("Utilizador sincronizado: {}", user);
     }
+
+
+
 
     @Transactional
     public User delete(final Long id) {

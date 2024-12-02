@@ -59,6 +59,7 @@ public class User implements UserDetails {
     @Column(unique = true, updatable = false, nullable = false)
     @Email
     @Getter
+    @Setter
     @NotNull
     @NotBlank
     private String username;
@@ -83,7 +84,7 @@ public class User implements UserDetails {
 
     private String instanceId;
 
-    protected User() {
+    public User() {
         // for ORM only
     }
 

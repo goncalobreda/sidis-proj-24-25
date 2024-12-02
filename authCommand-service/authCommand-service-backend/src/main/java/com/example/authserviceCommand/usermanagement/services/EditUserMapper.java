@@ -17,6 +17,7 @@ public abstract class EditUserMapper {
     private static final Logger logger = LoggerFactory.getLogger(UserService.class);
 
 
+    @Mapping(source = "username", target = "username")
     @Mapping(source = "authorities", target = "authorities", qualifiedByName = "stringToRole")
     @Mapping(source = "phoneNumber", target = "phoneNumber")
     public abstract User create(CreateUserRequest request);
@@ -38,6 +39,9 @@ public abstract class EditUserMapper {
     @AfterMapping
     protected void logMapping(@MappingTarget User user, CreateUserRequest request) {
         logger.info("Mapping realizado para User: {}", user);
+        logger.info("Username mapeado: {}", user.getUsername());
         logger.info("PhoneNumber mapeado: {}", user.getPhoneNumber());
     }
 }
+
+

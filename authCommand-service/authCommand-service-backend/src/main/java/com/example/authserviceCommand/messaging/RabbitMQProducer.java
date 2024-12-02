@@ -37,19 +37,4 @@ public class RabbitMQProducer {
             logger.error("Erro ao enviar mensagem para RabbitMQ: {}", e.getMessage());
         }
     }
-
-    public void sendBootstrapMessage(List<UserSyncDTO> bootstrapUsers) {
-        if ("command.auth1".equals(instanceId)) {
-            String routingKey = "bootstrap.sync.query";
-            logger.info("Preparando mensagem de bootstrap com {} utilizadores.", bootstrapUsers.size());
-            try {
-                rabbitTemplate.convertAndSend(RabbitMQConfig.EXCHANGE_NAME, routingKey, bootstrapUsers);
-                logger.info("Mensagem de bootstrap enviada com sucesso para o Exchange '{}' com routingKey '{}'", RabbitMQConfig.EXCHANGE_NAME, routingKey);
-            } catch (Exception e) {
-                logger.error("Erro ao enviar mensagem de bootstrap: {}", e.getMessage());
-            }
-        } else {
-            logger.info("Instância {} não participa do envio de mensagens de bootstrap.", instanceId);
-        }
-    }
 }

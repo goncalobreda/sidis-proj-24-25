@@ -14,8 +14,6 @@ public class RabbitMQConfig {
     @Value("${rabbitmq.queue.name}")
     private String queueName;
 
-    @Value("${rabbitmq.bootstrap.queue.name:}")
-    private String bootstrapQueueName;
 
     @Value("${instance.id}")
     private String instanceId;
@@ -27,13 +25,6 @@ public class RabbitMQConfig {
         return new Queue(queueName, true);
     }
 
-    @Bean
-    public Queue bootstrapQueue() {
-        if ("command.auth1".equals(instanceId)) {
-            return new Queue(bootstrapQueueName, true);
-        }
-        return null;
-    }
 
     @Bean
     public TopicExchange authExchange() {
@@ -53,15 +44,6 @@ public class RabbitMQConfig {
         return BindingBuilder.bind(syncQueue).to(authExchange).with(routingKey);
     }
 
-
-    @Bean
-    public Binding bootstrapQueueBinding(Queue bootstrapQueue, TopicExchange authExchange) {
-        if ("command.auth1".equals(instanceId) && bootstrapQueue != null) {
-            String routingKey = "bootstrap.sync.query";
-            return BindingBuilder.bind(bootstrapQueue).to(authExchange).with(routingKey);
-        }
-        return null;
-    }
 
     @Bean
     public Jackson2JsonMessageConverter jacksonMessageConverter() {

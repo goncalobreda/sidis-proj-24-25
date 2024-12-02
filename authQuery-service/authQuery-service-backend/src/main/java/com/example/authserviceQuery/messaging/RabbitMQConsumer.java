@@ -30,20 +30,4 @@ public class RabbitMQConsumer {
             logger.error("Erro ao sincronizar utilizador: {}", e.getMessage());
         }
     }
-
-    @RabbitListener(queues = "${rabbitmq.bootstrap.queue.name}")
-    public void receiveBootstrapMessage(List<UserSyncDTO> users) {
-        logger.info("Mensagem de bootstrap recebida com {} utilizadores", users.size());
-
-        try {
-            users.forEach(user -> {
-                logger.info("Processando utilizador: {}", user.getUsername());
-                userService.upsert(user);
-            });
-
-            logger.info("Inicialização de dados concluída com sucesso.");
-        } catch (Exception e) {
-            logger.error("Erro ao processar mensagem de bootstrap: {}", e.getMessage());
-        }
-    }
 }

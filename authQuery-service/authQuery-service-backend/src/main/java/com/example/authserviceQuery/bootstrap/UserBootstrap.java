@@ -1,11 +1,10 @@
-package com.example.authserviceCommand.bootstrap;
+package com.example.authserviceQuery.bootstrap;
 
-import com.example.authserviceCommand.usermanagement.model.Role;
-import com.example.authserviceCommand.usermanagement.model.User;
-import com.example.authserviceCommand.dto.UserSyncDTO;
-import com.example.authserviceCommand.usermanagement.repositories.UserRepository;
+import com.example.authserviceQuery.dto.UserSyncDTO;
+import com.example.authserviceQuery.usermanagement.model.Role;
+import com.example.authserviceQuery.usermanagement.model.User;
+import com.example.authserviceQuery.usermanagement.repositories.UserRepository;
 import lombok.RequiredArgsConstructor;
-import org.hibernate.Hibernate;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -45,13 +44,9 @@ public class UserBootstrap implements CommandLineRunner {
                     savedUser.isEnabled(),
                     savedUser.getAuthorities().stream().map(Role::getAuthority).collect(Collectors.toSet()),
                     instanceId,
-                    savedUser.getPhoneNumber(),
-                    generateMessageId() // Novo campo messageId
+                    savedUser.getPhoneNumber()
             );
         }
     }
 
-    private String generateMessageId() {
-        return java.util.UUID.randomUUID().toString();
-    }
 }

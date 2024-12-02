@@ -14,9 +14,6 @@ public class RabbitMQConfig {
     @Value("${rabbitmq.queue.name}")
     private String queueName;
 
-    @Value("${rabbitmq.bootstrap.queue.name}")
-    private String bootstrapQueueName;
-
     @Value("${instance.id}")
     private String instanceId;
 
@@ -28,11 +25,6 @@ public class RabbitMQConfig {
         return new Queue(queueName, true);
     }
 
-    // Queue para bootstrap
-    @Bean
-    public Queue bootstrapQueue() {
-        return new Queue(bootstrapQueueName, true);
-    }
 
     @Bean
     public TopicExchange authExchange() {
@@ -46,14 +38,6 @@ public class RabbitMQConfig {
         return BindingBuilder.bind(syncQueue).to(authExchange).with(routingKey);
     }
 
-
-    // Binding para a queue de bootstrap
-
-    @Bean
-    public Binding bootstrapQueueBinding(Queue bootstrapQueue, TopicExchange authExchange) {
-        String routingKey = "bootstrap.sync.query";
-        return BindingBuilder.bind(bootstrapQueue).to(authExchange).with(routingKey);
-    }
 
     @Bean
     public Jackson2JsonMessageConverter jacksonMessageConverter() {
