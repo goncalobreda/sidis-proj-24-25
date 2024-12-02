@@ -11,21 +11,13 @@ import java.util.Set;
 @Service
 public interface ReaderService {
 
-    List<Reader> findAll();
-
+    // Métodos relacionados a comando (criação, atualização, sincronização)
     Reader create(CreateReaderRequest request);
 
     Reader partialUpdate(String readerID, EditReaderRequest request, long parseLong);
 
-    Set<String> getInterestsByReader(Reader reader);
+    void syncReceivedReader(Reader reader);
 
-    List<ReaderCountDTO> findTop5Readers();
-
-    Optional<Reader> getReaderByID(String readerID);
-
-    Optional<Reader> getReaderByEmail(String email);
-
-    List<Reader> getReaderByName(final String name);
-
-    List<Reader> searchReaders(Page page, SearchReadersQuery query);
+    // Validação
+    void validateBirthdate(String birthdate);
 }

@@ -1,7 +1,8 @@
-package com.example.readerserviceCommand.infrastructure.repositories.impl;
+package com.example.readerserviceQuery.infrastructure.repositories.impl;
 
-import com.example.readerserviceCommand.model.Reader;
-import com.example.readerserviceCommand.repositories.ReaderRepository;
+import com.example.readerserviceQuery.model.Reader;
+import com.example.readerserviceQuery.model.ReaderCountDTO;
+import com.example.readerserviceQuery.repositories.ReaderRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.data.repository.query.Param;
@@ -25,6 +26,13 @@ public interface SpringDataReaderRepository extends ReaderRepository, ReaderRepo
     @Query("SELECT r FROM Reader r WHERE r.email LIKE :email")
     Optional<Reader> findByEmail(@Param("email") String email);
 
+    @Override
+    @Query("SELECT r FROM Reader r WHERE LOWER(r.fullName) LIKE LOWER(CONCAT('%', :name, '%'))")
+    List<Reader> findByName(@Param("name") String name);
+
     @Query("SELECT COUNT(r) FROM Reader r")
     long count();
+
+    @Query("SELECT r FROM Reader r ORDER BY r.createdAt DESC")
+    List<ReaderCountDTO> findTop5Readers();
 }

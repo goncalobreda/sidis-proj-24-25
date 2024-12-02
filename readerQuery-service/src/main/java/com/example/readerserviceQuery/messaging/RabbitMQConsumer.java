@@ -1,7 +1,7 @@
-package com.example.readerserviceCommand.messaging;
+package com.example.readerserviceQuery.messaging;
 
-import com.example.readerserviceCommand.dto.UserSyncDTO;
-import com.example.readerserviceCommand.service.ReaderServiceImpl;
+import com.example.readerserviceQuery.dto.UserSyncDTO;
+import com.example.readerserviceQuery.service.ReaderServiceImpl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -27,14 +27,13 @@ public class RabbitMQConsumer {
     public void processSyncMessage(UserSyncDTO userSyncDTO) {
         logger.info("Mensagem recebida para sincronizar Reader: {}", userSyncDTO);
 
-        // Log para verificar a instância de origem
+        // Ignorar mensagens da mesma instância
         if (instanceId.equals(userSyncDTO.getOriginInstanceId())) {
             logger.info("Mensagem ignorada, enviada pela própria instância: {}", instanceId);
             return;
         }
 
         try {
-            logger.info("Processando sincronização para o Reader: {}", userSyncDTO.getUsername());
             readerServiceImpl.createFromUserSyncDTO(userSyncDTO);
             logger.info("Reader sincronizado com sucesso: {}", userSyncDTO.getUsername());
         } catch (Exception e) {

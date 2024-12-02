@@ -1,8 +1,8 @@
-package com.example.readerserviceCommand.messaging;
+package com.example.readerserviceQuery.messaging;
 
-import com.example.readerserviceCommand.config.RabbitMQConfig;
-import com.example.readerserviceCommand.dto.UserSyncDTO;
-import com.example.readerserviceCommand.model.Reader;
+import com.example.readerserviceQuery.config.RabbitMQConfig;
+import com.example.readerserviceQuery.dto.UserSyncDTO;
+import com.example.readerserviceQuery.model.Reader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;

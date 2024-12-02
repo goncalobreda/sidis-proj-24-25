@@ -1,4 +1,4 @@
-package com.example.readerserviceCommand.config;
+package com.example.readerserviceQuery.config;
 
 import org.springframework.amqp.core.*;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;

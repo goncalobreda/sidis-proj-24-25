@@ -7,7 +7,6 @@ import com.example.readerserviceCommand.client.LendingServiceClient;
 import com.example.readerserviceCommand.dto.UserSyncDTO;
 import com.example.readerserviceCommand.messaging.RabbitMQProducer;
 import com.example.readerserviceCommand.model.Reader;
-import com.example.readerserviceCommand.model.ReaderCountDTO;
 import com.example.readerserviceCommand.repositories.ReaderRepository;
 import com.example.readerserviceCommand.exceptions.ConflictException;
 import com.example.readerserviceCommand.exceptions.NotFoundException;
@@ -17,8 +16,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
-import java.util.*;
-import java.util.stream.Collectors;
 
 @Service
 public class ReaderServiceImpl implements ReaderService {
@@ -26,30 +23,17 @@ public class ReaderServiceImpl implements ReaderService {
     private static final Logger logger = LoggerFactory.getLogger(ReaderServiceImpl.class);
 
     private final ReaderRepository readerRepository;
-    private final EditReaderMapper editReaderMapper;
-    private final LendingServiceClient lendingServiceClient;
-    private final BookServiceClient bookServiceClient;
     private final RabbitMQProducer rabbitMQProducer;
 
     @Value("${instance.id}")
     private String instanceId;
 
-    public ReaderServiceImpl(ReaderRepository readerRepository,
-                             EditReaderMapper editReaderMapper,
-                             LendingServiceClient lendingServiceClient,
-                             BookServiceClient bookServiceClient,
-                             RabbitMQProducer rabbitMQProducer) {
+    public ReaderServiceImpl(ReaderRepository readerRepository, RabbitMQProducer rabbitMQProducer) {
         this.readerRepository = readerRepository;
-        this.editReaderMapper = editReaderMapper;
-        this.lendingServiceClient = lendingServiceClient;
-        this.bookServiceClient = bookServiceClient;
         this.rabbitMQProducer = rabbitMQProducer;
     }
 
-    @Override
-    public List<Reader> findAll() {
-        return readerRepository.findAll();
-    }
+    // Métodos de criação e atualização (Command)
 
     @Override
     public Reader create(CreateReaderRequest request) {
@@ -81,10 +65,8 @@ public class ReaderServiceImpl implements ReaderService {
 
     public Reader createFromUserSyncDTO(UserSyncDTO userSyncDTO) {
         logger.info("Criando Reader a partir de UserSyncDTO: {}", userSyncDTO);
-        logger.info("PhoneNumber recebido no UserSyncDTO: {}", userSyncDTO.getPhoneNumber());
 
         if (readerRepository.existsByEmail(userSyncDTO.getUsername())) {
-            logger.info("Leitor já existe: {}", userSyncDTO.getUsername());
             return readerRepository.findByEmail(userSyncDTO.getUsername()).get();
         }
 
@@ -97,24 +79,17 @@ public class ReaderServiceImpl implements ReaderService {
 
         logger.info("Criando Reader: username={}, phoneNumber={}", reader.getEmail(), reader.getPhoneNumber());
 
-
         // Definir o readerID
         reader.setUniqueReaderID();
-
-        // Definir um valor padrão para o birthdate
         reader.setBirthdate(String.valueOf(LocalDate.of(2000, 1, 1)));
 
         return readerRepository.save(reader);
     }
 
-
-
     public void syncReceivedReader(Reader reader) {
         if (readerRepository.existsByEmail(reader.getEmail())) {
-            logger.info("Leitor já existente: {}", reader.getEmail());
             return;
         }
-
         readerRepository.save(reader);
         logger.info("Leitor sincronizado com sucesso: {}", reader.getEmail());
     }
@@ -133,32 +108,7 @@ public class ReaderServiceImpl implements ReaderService {
         return readerRepository.save(reader);
     }
 
-    @Override
-    public Optional<Reader> getReaderByID(final String readerID) {
-        return readerRepository.findByReaderID(readerID);
-    }
-
-    @Override
-    public Optional<Reader> getReaderByEmail(final String email) {
-        return readerRepository.findByEmail(email);
-    }
-
-    @Override
-    public List<Reader> getReaderByName(final String fullName) {
-        return readerRepository.findByName(fullName);
-    }
-
-    public List<Reader> searchReaders(Page page, SearchReadersQuery query) {
-        if (page == null) {
-            page = new Page(1, 10);
-        }
-        if (query == null) {
-            query = new SearchReadersQuery("", "", "");
-        }
-        return readerRepository.searchReaders(page, query);
-    }
-
-    private void validateBirthdate(final String birthdate) {
+    public void validateBirthdate(final String birthdate) {
         if (birthdate == null) throw new IllegalArgumentException("A data de nascimento não pode ser nula");
         if (!birthdate.isBlank()) {
             String[] parts = birthdate.split("-");
@@ -193,36 +143,5 @@ public class ReaderServiceImpl implements ReaderService {
                 throw new IllegalArgumentException("Data de nascimento deve conter inteiros válidos para dia, mês e ano", e);
             }
         }
-    }
-
-    public List<ReaderCountDTO> findTop5Readers() {
-        List<LendingDTO> lendings = lendingServiceClient.getAllLendings();
-
-        Map<String, Long> readerIdCounts = lendings.stream()
-                .collect(Collectors.groupingBy(LendingDTO::getReaderID, Collectors.counting()));
-
-        List<Map.Entry<String, Long>> top5Readers = readerIdCounts.entrySet().stream()
-                .sorted(Map.Entry.<String, Long>comparingByValue().reversed())
-                .limit(5)
-                .collect(Collectors.toList());
-
-        return top5Readers.stream()
-                .map(entry -> new ReaderCountDTO(entry.getKey(), entry.getValue()))
-                .collect(Collectors.toList());
-    }
-
-    public List<GenreDTO> getBookSuggestions(Reader reader) {
-        Set<String> interests = getInterestsByReader(reader);
-        List<GenreDTO> suggestions = new ArrayList<>();
-
-        for (String interest : interests) {
-            suggestions.addAll(bookServiceClient.getBooksByGenre(interest));
-        }
-
-        return suggestions;
-    }
-
-    public Set<String> getInterestsByReader(Reader reader) {
-        return reader.getInterests();
     }
 }
