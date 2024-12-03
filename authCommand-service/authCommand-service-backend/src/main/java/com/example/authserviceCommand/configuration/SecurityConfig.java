@@ -71,10 +71,6 @@ public class SecurityConfig {
     @Value("${springdoc.swagger-ui.path}")
     private String swaggerPath;
 
-    @Bean
-    public RestTemplate restTemplate() {
-        return new RestTemplate();
-    }
 
     @Bean
     public AuthenticationManager authenticationManager(final UserDetailsService userDetailsService,

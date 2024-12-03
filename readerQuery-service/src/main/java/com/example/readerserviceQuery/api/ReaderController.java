@@ -13,7 +13,10 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -45,9 +48,43 @@ class ReaderController {
             @PathVariable("id1") @Parameter(description = "The id of the reader to find") final String id1,
             @PathVariable("id2") final String id2) {
         String readerID = id1 + "/" + id2;
+
+        String authenticatedEmail = getAuthenticatedEmail();
+        boolean isLibrarian = hasRole("LIBRARIAN");
+
+        // Adicionar logs para diagnóstico
+        System.out.println("Authenticated email: " + authenticatedEmail);
+        System.out.println("Is librarian: " + isLibrarian);
+        System.out.println("Requested reader ID: " + readerID);
+
         return readerService.getReaderByID(readerID)
-                .map(ResponseEntity::ok)
-                .orElseGet(() -> ResponseEntity.notFound().build());
+                .map(reader -> {
+                    System.out.println("Reader email: " + reader.getEmail());
+                    if (isLibrarian || reader.getEmail().equals(authenticatedEmail)) {
+                        return ResponseEntity.ok(reader);
+                    } else {
+                        System.out.println("Access denied for email: " + authenticatedEmail);
+                        return ResponseEntity.status(HttpStatus.FORBIDDEN).<Reader>build();
+                    }
+                })
+                .orElseGet(() -> {
+                    System.out.println("Reader not found for ID: " + readerID);
+                    return ResponseEntity.notFound().build();
+                });
+    }
+
+
+
+
+    private String getAuthenticatedEmail() {
+        Jwt jwt = (Jwt) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        return jwt.getClaim("email");
+    }
+
+
+    private boolean hasRole(String role) {
+        return SecurityContextHolder.getContext().getAuthentication().getAuthorities().stream()
+                .anyMatch(authority -> authority.getAuthority().equals("ROLE_" + role));
     }
 
     @Operation(summary = "Gets a specific Reader by email")
