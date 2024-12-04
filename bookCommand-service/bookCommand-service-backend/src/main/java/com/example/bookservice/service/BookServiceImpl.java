@@ -46,9 +46,19 @@ public class BookServiceImpl implements BookService {
 
     @Override
     public Book create(CreateBookRequest request) {
+        // Validação para garantir que o ISBN é único
+        if (request.getIsbn() == null || request.getIsbn().isBlank()) {
+            throw new IllegalArgumentException("O ISBN não pode ser vazio.");
+        }
+
+        if (bookRepository.findByIsbn(request.getIsbn()).isPresent()) {
+            throw new IllegalArgumentException("O ISBN já está em uso.");
+        }
+
+        // Buscar o gênero pelo interesse
         Genre genre = genreRepository.findByInterest(request.getGenre());
         if (genre == null) {
-            throw new IllegalArgumentException("Genre not found: " + request.getGenre());
+            throw new IllegalArgumentException("Gênero não encontrado: " + request.getGenre());
         }
 
         List<Author> authors = new ArrayList<>();
@@ -58,38 +68,47 @@ public class BookServiceImpl implements BookService {
             authors.add(author);
         }
 
-        Book book = new Book(
-                request.getIsbn(),
-                request.getTitle(),
-                genre,
-                request.getDescription(),
-                authors,
-                bookImageRepository.findById(request.getBookImageId())
-                        .orElseThrow(() -> new IllegalArgumentException("Book image not found"))
-        );
 
+        // Criar livro
+        Book book = new Book();
+        book.setIsbn(request.getIsbn());
+        book.setTitle(request.getTitle());
+        book.setGenre(genre);
+        book.setDescription(request.getDescription());
+
+        // Salvar no banco de dados
         book = bookRepository.save(book);
-        rabbitMQProducer.sendBookEvent("create", book);
+
+        // Enviar evento de sincronização para RabbitMQ
+        rabbitMQProducer.sendBookSyncEvent(book);
 
         return book;
     }
 
+
     @Override
     public Book partialUpdate(Long bookID, EditBookRequest request, long desiredVersion) {
-        Book existingBook = bookRepository.findById(bookID)
-                .orElseThrow(() -> new IllegalArgumentException("Book not found"));
 
         Genre genre = genreRepository.findByInterest(request.getGenre());
         if (genre == null) {
             throw new IllegalArgumentException("Genre not found: " + request.getGenre());
         }
 
-        existingBook.applyPatch(desiredVersion, request.getTitle(), genre, request.getDescription());
-        bookRepository.save(existingBook);
-        rabbitMQProducer.sendBookEvent("update", existingBook);
+        Book book = bookRepository.findById(bookID)
+                .orElseThrow(() -> new IllegalArgumentException("Book not found"));
 
-        return existingBook;
+        book.setTitle(request.getTitle());
+        book.setGenre(genre);
+        book.setDescription(request.getDescription());
+        book.setVersion(desiredVersion);
+        book = bookRepository.save(book);
+
+        // Enviar evento de atualização
+        rabbitMQProducer.sendBookSyncEvent(book);
+
+        return book;
     }
+
 
 
     @Override

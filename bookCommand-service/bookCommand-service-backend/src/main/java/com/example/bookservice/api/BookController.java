@@ -1,5 +1,6 @@
 package com.example.bookservice.api;
 
+import com.example.bookservice.messaging.RabbitMQProducer;
 import com.example.bookservice.model.*;
 import com.example.bookservice.repositories.BookRepository;
 import com.example.bookservice.service.BookServiceImpl;
@@ -35,12 +36,15 @@ public class BookController {
     private final BookServiceImpl bookService;
     private final BookViewMapper bookMapper;
     private final BookRepository bookRepository;
+    private final RabbitMQProducer rabbitMQProducer;
+
 
     @Autowired
-    public BookController(BookServiceImpl bookService, BookViewMapper bookMapper, BookRepository bookRepository) {
+    public BookController(BookServiceImpl bookService, BookViewMapper bookMapper, BookRepository bookRepository, RabbitMQProducer rabbitMQProducer) {
         this.bookService = bookService;
         this.bookMapper = bookMapper;
         this.bookRepository = bookRepository;
+        this.rabbitMQProducer = rabbitMQProducer;
     }
 
 
@@ -84,29 +88,9 @@ public class BookController {
 
 
     @PostMapping("/sync")
-    public ResponseEntity<Book> createBookSync(@RequestBody Book book) {
-        // Verifique se o livro já existe na instância atual com base no ISBN ou ID
-        Optional<Book> existingBook = bookRepository.findByIsbn(book.getIsbn());
-
-        if (existingBook.isPresent()) {
-            // Se o livro já existe, atualize-o para evitar duplicação
-            Book existing = existingBook.get();
-            existing.setTitle(book.getTitle());
-            existing.setGenre(book.getGenre());
-            existing.setDescription(book.getDescription());
-            existing.setAuthor(book.getAuthor());
-            existing.setBookImage(book.getBookImage());
-            existing.setVersion(book.getVersion());
-
-            Book updatedBook = bookRepository.save(existing);
-            return ResponseEntity.ok(updatedBook);
-        } else {
-            // Se o livro não existir, crie um novo
-            Book savedBook = bookRepository.save(book);
-            return ResponseEntity.ok(savedBook);
-        }
+    public ResponseEntity<Void> syncBook(@RequestBody Book book) {
+        rabbitMQProducer.sendBookSyncEvent(book);
+        return ResponseEntity.status(HttpStatus.OK).build();
     }
-
-
 
 }

@@ -10,14 +10,11 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
-import java.util.Optional;
 
 @Tag(name = "Authors", description = "Endpoints for managing Authors")
 @RestController
@@ -28,26 +25,28 @@ public class AuthorController {
 
     private final AuthorServiceImpl authorService;
 
-    @Autowired
     public AuthorController(AuthorServiceImpl authorService) {
         this.authorService = authorService;
     }
-
 
     @Operation(summary = "Creates a new Author")
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public ResponseEntity<Author> create(@Valid @RequestBody CreateAuthorRequest request) {
+        logger.info("Recebendo solicitação para criar autor.");
         Author createdAuthor = authorService.create(request);
+        logger.info("Autor criado com sucesso: {}", createdAuthor.getAuthorID());
         return ResponseEntity.status(HttpStatus.CREATED).body(createdAuthor);
     }
 
     @Operation(summary = "Updates an existing Author")
-    @PatchMapping(value = "/{id}")
+    @PatchMapping("/{id}")
     public ResponseEntity<Author> partialUpdate(
-            @PathVariable("id") @Parameter(description = "The id of the author to update") final String authorID,
-            @Valid @RequestBody final EditAuthorRequest request) {
-        Author updatedAuthor = authorService.partialUpdate(authorID, request, 1L); // Replace with actual version handling logic
+            @PathVariable("id") @Parameter(description = "The ID of the author to update") String authorID,
+            @Valid @RequestBody EditAuthorRequest request) {
+        logger.info("Recebendo solicitação para atualizar autor com ID: {}", authorID);
+        Author updatedAuthor = authorService.partialUpdate(authorID, request, 1L); // Modifique para controle de versão real
+        logger.info("Autor atualizado com sucesso: {}", updatedAuthor.getAuthorID());
         return ResponseEntity.ok(updatedAuthor);
     }
 }
