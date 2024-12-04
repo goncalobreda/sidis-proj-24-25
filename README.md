@@ -2,7 +2,7 @@
 
 	# Descrição do Projeto
 
-Este projeto implementa um sistema de gestão de bibliotecas baseado numa arquitetura de microserviços distribuídos. O sistema facilita a gestão de autenticação, readers, books (incluindo autores e géneros) e empréstimos, utilizando REST APIs para comunicação entre serviços. A arquitetura foi desenhada para ser escalável, modular e de fácil manutenção. 
+Este projeto implementa um sistema de gestão de bibliotecas baseado numa arquitetura de microserviços distribuídos. O sistema facilita a gestão de autenticação, readers, books (incluindo autores e géneros) e empréstimos, utilizando Message Broker RabbitMQ para comunicação entre serviços. A arquitetura foi desenhada para ser escalável, modular e de fácil manutenção. 
 
 
 	# Tecnologias Utilizadas
@@ -101,37 +101,6 @@ Reader Service2: http://localhost:8087/swagger-ui.html
 
 
                 #Documentção, diagramas
-
-
-### Vista Lógica de Nível 1
-
-![VL-N1](\docs\VL-N1.png)
-
-### Vista Lógica de Nível 2
-
-![VL-N2](\docs\VL-N2.png)
-
-### Vista Física de Nível 1
-
-![VF-N1](\docs\VF-N1.png)
-
-### Vista Física de Nível 2
-
-![VF-N2](\docs\VF-N2.png)
-
-### Vista Processos de Nível 2 - create a lending
-
-![VP-N2 create lending](\docs\VP-N2 create lending.png)
-
-### Vista Processos de Nível 2 - create a book
-
-![VP-N2 create book](\docs\VP-N2 create book.png)
-
-### Vista Processos de Nível 2 - register/create a reader
-
-![VP-N2 create reader](\docs\VP-N2 register reader.png)
-
-
 
 
 

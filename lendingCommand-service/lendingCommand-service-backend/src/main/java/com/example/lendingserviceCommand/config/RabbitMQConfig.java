@@ -1,4 +1,4 @@
-package com.example.authserviceCommand.configuration;
+package com.example.lendingserviceCommand.config;
 
 import org.springframework.amqp.core.*;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
@@ -14,36 +14,25 @@ public class RabbitMQConfig {
     @Value("${rabbitmq.queue.name}")
     private String queueName;
 
+    @Value("${rabbitmq.exchange.name}")
+    private String exchangeName;
 
-    @Value("${instance.id}")
-    private String instanceId;
-
-    public static final String EXCHANGE_NAME = "auth-service-exchange";
+    public static final String ROUTING_KEY = "user.sync.#";
 
     @Bean
-    public Queue syncQueue() {
+    public Queue lendingQueue() {
         return new Queue(queueName, true);
     }
 
-
     @Bean
-    public TopicExchange authExchange() {
-        return new TopicExchange(EXCHANGE_NAME);
+    public TopicExchange lendingExchange() {
+        return new TopicExchange(exchangeName);
     }
 
     @Bean
-    public Binding syncQueueBinding(Queue syncQueue, TopicExchange authExchange) {
-        String routingKey = "user.sync.#";
-        return BindingBuilder.bind(syncQueue).to(authExchange).with(routingKey);
+    public Binding lendingQueueBinding(Queue lendingQueue, TopicExchange lendingExchange) {
+        return BindingBuilder.bind(lendingQueue).to(lendingExchange).with(ROUTING_KEY);
     }
-
-
-    @Bean
-    public Binding registerQueueBinding(Queue syncQueue, TopicExchange authExchange) {
-        String routingKey = "user.register.#";
-        return BindingBuilder.bind(syncQueue).to(authExchange).with(routingKey);
-    }
-
 
     @Bean
     public Jackson2JsonMessageConverter jacksonMessageConverter() {

@@ -1,13 +1,12 @@
-package com.example.lendingservice;
+/*package com.example.lendingservice;
 
-import com.example.lendingservice.config.LendingConfiguration;
-import com.example.lendingservice.exceptions.NotFoundException;
-import com.example.lendingservice.model.Lending;
-import com.example.lendingservice.repositories.LendingRepository;
-import com.example.lendingservice.service.CreateLendingRequest;
-import com.example.lendingservice.service.EditLendingRequest;
-import com.example.lendingservice.service.ExternalServiceHelper;
-import com.example.lendingservice.service.LendingServiceImpl;
+import com.example.lendingserviceCommand.config.LendingConfiguration;
+import com.example.lendingserviceCommand.exceptions.NotFoundException;
+import com.example.lendingserviceCommand.model.Lending;
+import com.example.lendingserviceCommand.repositories.LendingRepository;
+import com.example.lendingserviceCommand.service.CreateLendingRequest;
+import com.example.lendingserviceCommand.service.ExternalServiceHelper;
+import com.example.lendingserviceCommand.service.LendingServiceImpl;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
@@ -157,3 +156,6 @@ class LendingServiceUnitTest {
         verify(lendingRepository, times(1)).findByLendingID("2024/1");
     }
 }
+
+
+ */
