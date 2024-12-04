@@ -1,112 +1,121 @@
-#  Sistema de Gestão de Biblioteca Distribuído
+# Sistema de Gestão de Biblioteca Distribuído
 
-	# Descrição do Projeto
-
-Este projeto implementa um sistema de gestão de bibliotecas baseado numa arquitetura de microserviços distribuídos. O sistema facilita a gestão de autenticação, readers, books (incluindo autores e géneros) e empréstimos, utilizando Message Broker RabbitMQ para comunicação entre serviços. A arquitetura foi desenhada para ser escalável, modular e de fácil manutenção. 
+## Descrição do Projeto
 
 
-	# Tecnologias Utilizadas
+Este projeto é um sistema distribuído para a gestão de bibliotecas, desenvolvido com uma arquitetura de microserviços. O sistema é composto por oito microserviços organizados em módulos **Command** e **Query**, garantindo uma separação clara de responsabilidades e elevada escalabilidade.
+Este projeto implementa um sistema de gestão de bibliotecas baseado numa arquitetura de microserviços distribuídos. O sistema facilita a gestão de autenticação, readers, books (incluindo autores e géneros) e empréstimos, utilizando Message Broker RabbitMQ para comunicação entre serviços. A arquitetura foi desenhada para ser escalável, modular e de fácil manutenção.
 
-- Java 21
-  
-- Spring Boot para desenvolvimento dos microserviços.
- 
-- Spring Security com OAuth2 e JWT para autenticação e autorização.
- 
-- Hibernate & JPA para persistência de dados.
- 
-  - H2 Database.
-  
-    - Swagger UI para documentação da API.
+A comunicação entre os microserviços é realizada de forma assíncrona através do **RabbitMQ**, assegurando fiabilidade e eficiência no processamento de mensagens. As interações do cliente com o sistema são realizadas por chamadas HTTP, permitindo a consulta e gestão dos recursos de forma simples e estruturada.
 
-            # Arquitetura do Sistema
+O sistema permite gerir autenticação, leitores, livros e empréstimos, proporcionando uma solução completa e robusta para a gestão de bibliotecas.
 
-      O sistema é composto por quatro microserviços principais, cada um responsável por uma parte específica da aplicação. Para cada micro serviço foram criadas 2 instancias e cada uma das instancias têm a sua respetiva base de dados. Isto foi feito a pensar na escalabilidade do projeto tanto como na fiabilidade.
+---
 
-                  # 1. Auth Service
+## Arquitetura do Sistema
 
-         Responsável pela autenticação e autorização de utilizadores.
-  
-         Utiliza JWT (JSON Web Tokens) para gestão de sessões.
-  
-         Implementa gestão de users e roles (como LIBRARIAN e READER).
+O sistema é composto por oito microserviços distribuídos, cada um com duas instâncias. Cada serviço é dividido em dois módulos principais:
 
-                # 2. Book Service
+- **Command**: Responsável por operações de escrita e processamento de mensagens.
+- **Query**: Responsável por operações de leitura e consulta de dados.
 
-         Gere a gestão de livros, autores e géneros.
-  
-      Funcionalidades:
-            Adicionar e remover livros.
-            Consultar autores e géneros.
-            Pesquisa de livros por título, autor e género.
+### Microserviços e Instâncias
 
-                  # 3. Reader Service
+#### 1. Auth Service Command
+- **Função**: Gere operações de escrita relacionadas à autenticação, como criação de utilizadores e atribuição de roles.
+- **Instâncias**:
+    - AuthServiceCommand1: Porta **8080**
+    - AuthServiceCommand2: Porta **8081**
 
-        Responsável pela gestão de readers.
+#### 2. Auth Service Query
+- **Função**: Realiza operações de leitura relacionadas à autenticação, como consulta de utilizadores e permissões.
+- **Instâncias**:
+    - AuthServiceQuery1: Porta **8082**
+    - AuthServiceQuery2: Porta **8083**
 
-    Funcionalidades:
-                    Registo de novos readers.
-                    Gestão de perfis de readers.
-                    Consulta do histórico de leitura.
+#### 3. Book Service Command
+- **Função**: Gere operações de escrita para livros, como adição, remoção e atualização de dados de livros, autores e géneros.
+- **Instâncias**:
+    - BookServiceCommand1: Porta **8084**
+    - BookServiceCommand2: Porta **8085**
 
-                      # 4. Lending Service
+#### 4. Book Service Query
+- **Função**: Realiza operações de leitura, como pesquisa de livros por título, autor ou género.
+- **Instâncias**:
+    - BookServiceQuery1: Porta **8086**
+    - BookServiceQuery2: Porta **8087**
 
-        Gere o processo de empréstimos de livros.
+#### 5. Lending Service Command
+- **Função**: Gerencia operações de escrita no processo de empréstimos, como registo de empréstimos e devoluções.
+- **Instâncias**:
+    - LendingServiceCommand1: Porta **8088**
+    - LendingServiceCommand2: Porta **8089**
 
-      Funcionalidades:
-                Registo de empréstimos entre livros e leitores.
-                Gestão de datas de devolução.
-                Consulta do histórico de empréstimos.
+#### 6. Lending Service Query
+- **Função**: Focado em operações de leitura de dados relacionados aos empréstimos, como estado dos empréstimos e histórico.
+- **Instâncias**:
+    - LendingServiceQuery1: Porta **8090**
+    - LendingServiceQuery2: Porta **8091**
 
+#### 7. Reader Service Command
+- **Função**: Responsável pela escrita de dados relacionados aos leitores, como registo de novos leitores ou atualizações de perfis.
+- **Instâncias**:
+    - ReaderServiceCommand1: Porta **8092**
+    - ReaderServiceCommand2: Porta **8093**
 
-                # Funcionalidades Principais
+#### 8. Reader Service Query
+- **Função**: Dedicado à consulta de dados dos leitores, incluindo perfis e histórico de leituras.
+- **Instâncias**:
+    - ReaderServiceQuery1: Porta **8094**
+    - ReaderServiceQuery2: Porta **8095**
 
--Autenticação e autorização: O utilizador faz login através do Auth Service, recebendo um JWT para autenticação nos outros serviços.
+---
 
--Gestão de livros: Adicionar, remover e pesquisar livros por título, autor ou género através do Book Service.
+## Tecnologias Utilizadas
 
--Gestão de readers: Registo e consulta de perfis e histórico de leitura através do Reader Service.
+- **Java 21**
+- **Spring Boot** para desenvolvimento dos microserviços.
+- **Spring Security** com OAuth2 e JWT para autenticação e autorização.
+- **RabbitMQ** para comunicação assíncrona entre microserviços.
+- **Hibernate** & **JPA** para persistência de dados.
+- **H2 Database** para armazenamento local.
+- **Swagger UI** para documentação da API.
 
--Gestão de lendings: Criação de lendings, consulta e gestão de devoluções através do Lending Service.
+---
 
-                # Fluxo de Funcionamento
+## Documentação da API
 
--Autenticação: O user faz login através do Auth Service, recebendo um token JWT.
+Cada microserviço disponibiliza a sua documentação através do **Swagger UI**. Abaixo, encontram-se os links de cada instância:
+
+- **Auth Service**:
+    - AuthServiceCommand1: [http://localhost:8080/swagger-ui.html](http://localhost:8080/swagger-ui.html)
+    - AuthServiceCommand2: [http://localhost:8081/swagger-ui.html](http://localhost:8081/swagger-ui.html)
+    - AuthServiceQuery1: [http://localhost:8082/swagger-ui.html](http://localhost:8082/swagger-ui.html)
+    - AuthServiceQuery2: [http://localhost:8083/swagger-ui.html](http://localhost:8083/swagger-ui.html)
+
+- **Book Service**:
+    - BookServiceCommand1: [http://localhost:8084/swagger-ui.html](http://localhost:8084/swagger-ui.html)
+    - BookServiceCommand2: [http://localhost:8085/swagger-ui.html](http://localhost:8085/swagger-ui.html)
+    - BookServiceQuery1: [http://localhost:8086/swagger-ui.html](http://localhost:8086/swagger-ui.html)
+    - BookServiceQuery2: [http://localhost:8087/swagger-ui.html](http://localhost:8087/swagger-ui.html)
+
+<<<<<<< HEAD
+- **Lending Service**:
+    - LendingServiceCommand1: [http://localhost:8088/swagger-ui.html](http://localhost:8088/swagger-ui.html)
+    - LendingServiceCommand2: [http://localhost:8089/swagger-ui.html](http://localhost:8089/swagger-ui.html)
+    - LendingServiceQuery1: [http://localhost:8090/swagger-ui.html](http://localhost:8090/swagger-ui.html)
+    - LendingServiceQuery2: [http://localhost:8091/swagger-ui.html](http://localhost:8091/swagger-ui.html)
+
+- **Reader Service**:
+    - ReaderServiceCommand1: [http://localhost:8092/swagger-ui.html](http://localhost:8092/swagger-ui.html)
+    - ReaderServiceCommand2: [http://localhost:8093/swagger-ui.html](http://localhost:8093/swagger-ui.html)
+    - ReaderServiceQuery1: [http://localhost:8094/swagger-ui.html](http://localhost:8094/swagger-ui.html)
+    - ReaderServiceQuery2: [http://localhost:8095/swagger-ui.html](http://localhost:8095/swagger-ui.html)
 
 -Gestão de Livros: Utilizadores autenticados podem adicionar ou remover livros através do Book Service.
 
--Gestão de Leitores: O Reader Service gere as informações dos readers e os seus perfis.
+-Gestão de Readers: O Reader Service gere as informações dos readers e os seus perfis.
 
 -Gestão de Lendings: Os readers podem pedir emprestado livros através do Lending Service.
 
-                #Documentação da API
-
-Cada microserviço tem a sua documentação acessível através do Swagger UI:
-
-Auth Service1: http://localhost:8080/swagger-ui.html
-
-Auth Service2: http://localhost:8081/swagger-ui.html
-
-Book Service1: http://localhost:8082/swagger-ui.html
-
-Book Service2: http://localhost:8083/swagger-ui.html
-
-Lending Service1: http://localhost:8084/swagger-ui.html
-
-Lending Service2: http://localhost:8085/swagger-ui.html
-
-Reader Service1: http://localhost:8086/swagger-ui.html
-
-Reader Service2: http://localhost:8087/swagger-ui.html
-
-
-                #Documentção, diagramas
-
-
-
-
-
-
-
-
-  
+                
