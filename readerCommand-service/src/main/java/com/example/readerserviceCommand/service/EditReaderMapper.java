@@ -17,10 +17,7 @@ public abstract class EditReaderMapper {
     @Mapping(target = "readerID", ignore = true)
     public abstract Reader create(CreateReaderRequest request);
 
-    @Mapping(source = "readerID", target = "readerID")
-    @Mapping(target = "enabled", ignore = true)
-    @Mapping(source = "fullName", target = "fullName") // Mapear fullName para name
-    @Mapping(source = "interests", target = "interests", qualifiedByName = "stringToInterests")
+    @Mapping(source = "phoneNumber", target = "phoneNumber")
     public abstract void update(EditReaderRequest request, @MappingTarget Reader reader);
 
     @Named("stringToInterests")

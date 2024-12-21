@@ -1,5 +1,6 @@
 package com.example.readerserviceQuery.service;
 
+import com.example.readerserviceQuery.dto.PartialUpdateDTO;
 import com.example.readerserviceQuery.dto.UserSyncDTO;
 import com.example.readerserviceQuery.model.Reader;
 import com.example.readerserviceQuery.model.ReaderCountDTO;
@@ -76,6 +77,32 @@ public class ReaderServiceImpl implements ReaderService {
 
         return readerRepository.save(reader);
     }
+
+
+    public void applyPartialUpdate(PartialUpdateDTO partialUpdateDTO) {
+        logger.info("Aplicando partial update no Query: readerID={}, phoneNumber={}",
+                partialUpdateDTO.getReaderID(), partialUpdateDTO.getPhoneNumber());
+
+
+        Reader reader = readerRepository.findByReaderID(partialUpdateDTO.getReaderID())
+                .orElseGet(() -> {
+                    // Se desejar criar caso não exista
+                    Reader newReader = new Reader();
+                    newReader.setUniqueReaderID(); // ou setReaderID(partialUpdateDTO.getReaderID())
+                    newReader.setReaderID(partialUpdateDTO.getReaderID());
+                    logger.info("Reader não encontrado no Query - criando um novo com ID={}", partialUpdateDTO.getReaderID());
+                    return newReader;
+                });
+
+        reader.setPhoneNumber(partialUpdateDTO.getPhoneNumber());
+
+        readerRepository.save(reader);
+
+        logger.info("Reader (Query) {} atualizado com phoneNumber={}",
+                partialUpdateDTO.getReaderID(), partialUpdateDTO.getPhoneNumber());
+    }
+
+
 
     // Implementação do metodo searchReaders para consulta
     @Override

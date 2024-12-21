@@ -1,9 +1,7 @@
 package com.example.readerserviceCommand.service;
 
-import com.example.readerserviceCommand.client.BookServiceClient;
-import com.example.readerserviceCommand.client.GenreDTO;
-import com.example.readerserviceCommand.client.LendingDTO;
-import com.example.readerserviceCommand.client.LendingServiceClient;
+
+import com.example.readerserviceCommand.dto.PartialUpdateDTO;
 import com.example.readerserviceCommand.dto.UserSyncDTO;
 import com.example.readerserviceCommand.messaging.RabbitMQProducer;
 import com.example.readerserviceCommand.model.Reader;
@@ -94,19 +92,51 @@ public class ReaderServiceImpl implements ReaderService {
         logger.info("Leitor sincronizado com sucesso: {}", reader.getEmail());
     }
 
+    @Override
     public Reader partialUpdate(final String readerID, final EditReaderRequest request, final long desiredVersion) {
-        final var reader = readerRepository.findByReaderID(readerID)
-                .orElseThrow(() -> new NotFoundException("Não é possível atualizar um objeto que não existe"));
+        final Reader reader = readerRepository.findByReaderID(readerID)
+                .orElseThrow(() -> new NotFoundException("Reader não encontrado: " + readerID));
 
-        if (request.getBirthdate() != null) {
-            validateBirthdate(request.getBirthdate());
+        if (request.getPhoneNumber() != null) {
+            reader.setPhoneNumber(request.getPhoneNumber());
+        } else {
+            throw new IllegalArgumentException("PhoneNumber é obrigatório para partial update.");
         }
 
-        reader.applyPatch(desiredVersion, request.getFullName(), null, request.getEmail(), request.getBirthdate(),
-                request.getPhoneNumber(), request.isGDPR(), request.getInterests());
+        Reader updatedReader = readerRepository.save(reader);
 
-        return readerRepository.save(reader);
+        // Criação do PartialUpdateDTO
+        PartialUpdateDTO partialUpdateDTO = new PartialUpdateDTO(
+                readerID,
+                request.getPhoneNumber(),
+                instanceId
+        );
+
+        // Sempre envie a mensagem
+        logger.info("Enviando mensagem de partial update para sincronização.");
+        rabbitMQProducer.sendPartialUpdateMessage(partialUpdateDTO);
+
+        return updatedReader;
     }
+
+    public Reader partialUpdateFromConsumer(final String readerID, final EditReaderRequest request, final long desiredVersion) {
+        final Reader reader = readerRepository.findByReaderID(readerID)
+                .orElseThrow(() -> new NotFoundException("Reader não encontrado: " + readerID));
+
+        if (request.getPhoneNumber() != null) {
+            reader.setPhoneNumber(request.getPhoneNumber());
+        } else {
+            throw new IllegalArgumentException("PhoneNumber é obrigatório para partial update.");
+        }
+
+        Reader updatedReader = readerRepository.save(reader);
+
+        logger.info("Partial update aplicado (SEM republicação) para o Reader: {}", readerID);
+
+        return updatedReader;
+    }
+
+
 
     public void validateBirthdate(final String birthdate) {
         if (birthdate == null) throw new IllegalArgumentException("A data de nascimento não pode ser nula");

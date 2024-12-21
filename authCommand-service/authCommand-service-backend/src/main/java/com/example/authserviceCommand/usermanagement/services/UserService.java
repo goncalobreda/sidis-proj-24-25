@@ -68,7 +68,6 @@ public class UserService {
 
 
     public void syncUserWithOtherInstance(User user) {
-        // Verificar se a instância de origem é a mesma que está processando
         if (instanceId.equals(user.getInstanceId())) {
             logger.info("Ignorando sincronização para a própria instância: {}", instanceId);
             return;

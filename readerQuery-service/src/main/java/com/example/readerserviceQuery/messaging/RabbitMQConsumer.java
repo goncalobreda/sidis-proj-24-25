@@ -1,5 +1,6 @@
 package com.example.readerserviceQuery.messaging;
 
+import com.example.readerserviceQuery.dto.PartialUpdateDTO;
 import com.example.readerserviceQuery.dto.UserSyncDTO;
 import com.example.readerserviceQuery.service.ReaderServiceImpl;
 import org.slf4j.Logger;
@@ -40,4 +41,22 @@ public class RabbitMQConsumer {
             logger.error("Erro ao processar mensagem de sincronização: {}", e.getMessage(), e);
         }
     }
+
+    @RabbitListener(queues = "${rabbitmq.partial.update.queue.name}")
+    public void processPartialUpdate(PartialUpdateDTO partialUpdateDTO) {
+        logger.info("Mensagem recebida (Query) para partial update: {}", partialUpdateDTO);
+
+        if (instanceId.equals(partialUpdateDTO.getOriginInstanceId())) {
+            logger.info("Mensagem ignorada (Query). Originada da mesma instância: {}", instanceId);
+            return;
+        }
+
+        try {
+            readerServiceImpl.applyPartialUpdate(partialUpdateDTO);
+            logger.info("Base de dados (Query) atualizada com sucesso para o Reader: {}", partialUpdateDTO.getReaderID());
+        } catch (Exception e) {
+            logger.error("Erro ao aplicar partial update no Query: {}", e.getMessage(), e);
+        }
+    }
+
 }

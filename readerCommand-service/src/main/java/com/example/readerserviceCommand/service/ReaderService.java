@@ -16,6 +16,8 @@ public interface ReaderService {
 
     Reader partialUpdate(String readerID, EditReaderRequest request, long parseLong);
 
+    Reader partialUpdateFromConsumer(String readerID, EditReaderRequest request, long parseLong);
+
     void syncReceivedReader(Reader reader);
 
     // Validação

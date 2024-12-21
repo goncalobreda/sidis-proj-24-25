@@ -1,6 +1,8 @@
 package com.example.readerserviceCommand.messaging;
 
+import com.example.readerserviceCommand.dto.PartialUpdateDTO;
 import com.example.readerserviceCommand.dto.UserSyncDTO;
+import com.example.readerserviceCommand.service.EditReaderRequest;
 import com.example.readerserviceCommand.service.ReaderServiceImpl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -41,4 +43,29 @@ public class RabbitMQConsumer {
             logger.error("Erro ao processar mensagem de sincronização: {}", e.getMessage(), e);
         }
     }
+
+    @RabbitListener(queues = "${rabbitmq.partial.update.queue.name}")
+    public void processPartialUpdate(PartialUpdateDTO partialUpdateDTO) {
+        logger.info("Mensagem recebida para partial update: {}", partialUpdateDTO);
+
+        // Ignorar mensagens originadas da própria instância
+        if (instanceId.equals(partialUpdateDTO.getOriginInstanceId())) {
+            logger.info("Mensagem ignorada. Originada da mesma instância: {}", instanceId);
+            return;
+        }
+
+        try {
+            // Monta seu request a partir do partialUpdateDTO
+            EditReaderRequest request = new EditReaderRequest(partialUpdateDTO.getPhoneNumber());
+
+            // Agora chama o método SEM republicar
+            readerServiceImpl.partialUpdateFromConsumer(partialUpdateDTO.getReaderID(), request, 0);
+
+            logger.info("Partial update (de outra instância) aplicado com sucesso para o Reader: {}",
+                    partialUpdateDTO.getReaderID());
+        } catch (Exception e) {
+            logger.error("Erro ao processar partial update: {}", e.getMessage(), e);
+        }
+    }
+
 }

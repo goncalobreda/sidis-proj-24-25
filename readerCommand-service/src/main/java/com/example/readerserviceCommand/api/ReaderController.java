@@ -34,7 +34,7 @@ class ReaderController {
         }
     }
 
-    @PatchMapping("/readers/{id1}/{id2}/update")
+    @PatchMapping("/{id1}/{id2}/update")
     public ResponseEntity<Reader> updateReader(@PathVariable("id1") String id1, @PathVariable("id2") String id2,
                                                @RequestBody EditReaderRequest editRequest) {
         String readerID = id1 + "/" + id2;
