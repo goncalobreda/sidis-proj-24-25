@@ -10,6 +10,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -45,10 +46,21 @@ public class ReaderServiceImpl implements ReaderService {
         return readerRepository.findByName(fullName);
     }
 
-    @Override
     public List<ReaderCountDTO> findTop5Readers() {
-        return readerRepository.findTop5Readers();
+        List<Object[]> results = readerRepository.findTop5ReadersNative();
+        List<ReaderCountDTO> topReaders = new ArrayList<>();
+
+        for (Object[] row : results) {
+            String readerID = (String) row[0];
+            String fullName = (String) row[1];
+            Long readerCount = ((Number) row[2]).longValue(); // Certifique-se de converter para Long
+
+            topReaders.add(new ReaderCountDTO(readerID, fullName, readerCount));
+        }
+
+        return topReaders;
     }
+
 
     @Override
     public Set<String> getInterestsByReader(Reader reader) {

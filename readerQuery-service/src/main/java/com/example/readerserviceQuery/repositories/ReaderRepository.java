@@ -24,7 +24,7 @@ public interface ReaderRepository {
 
     <S extends Reader> S save(S entity);
 
-    List<ReaderCountDTO> findTop5Readers();
+    List<Object[]> findTop5ReadersNative();
 
     List<Reader> searchReaders(Page page, SearchReadersQuery query);
 }

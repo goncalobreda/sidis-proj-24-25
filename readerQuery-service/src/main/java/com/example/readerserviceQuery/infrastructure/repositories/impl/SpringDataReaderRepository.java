@@ -33,12 +33,18 @@ public interface SpringDataReaderRepository extends ReaderRepository, ReaderRepo
     @Query("SELECT COUNT(r) FROM Reader r")
     long count();
 
-    @Override
-    @Query("SELECT new com.example.readerserviceQuery.dto.ReaderCountDTO(r.readerID, r.fullName, COUNT(l)) " +
+    @Query(value = "SELECT r.readerID AS readerID, r.FULL_NAME AS fullName, COUNT(l.pk) AS readerCount " +
             "FROM Reader r " +
-            "JOIN Lending l ON r.readerID = l.readerID " +
-            "GROUP BY r.readerID, r.fullName " +
-            "ORDER BY COUNT(l) DESC")
-    List<ReaderCountDTO> findTop5Readers();
+            "JOIN Lending l ON r.readerID = l.READER_ID " +
+            "GROUP BY r.readerID, r.FULL_NAME " +
+            "ORDER BY readerCount DESC " +
+            "LIMIT 5", nativeQuery = true)
+    List<Object[]> findTop5ReadersNative();
+
+
+
+
+
+
 
 }
