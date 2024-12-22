@@ -16,4 +16,6 @@ public interface LendingRepository {
     Iterable<Lending> findAll();
 
     Lending save(Lending lending);
+
+    Optional<Lending> findByLendingID(String lendingID);
 }

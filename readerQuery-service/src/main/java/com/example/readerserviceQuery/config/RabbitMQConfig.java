@@ -18,6 +18,12 @@ public class RabbitMQConfig {
     @Value("${rabbitmq.partial.update.queue.name}")
     private String partialUpdateQueueName;
 
+    @Value("${rabbitmq.lending.queue.name}")
+    private String lendingQueueName;
+
+    @Value("${rabbitmq.exchange.name}")
+    private String lendingExchangeName;
+
     public static final String EXCHANGE_NAME = "auth-service-exchange";
     public static final String ROUTING_KEY = "user.sync.#";
 
@@ -54,6 +60,21 @@ public class RabbitMQConfig {
     public Binding partialUpdateBinding(Queue partialUpdateQueue, TopicExchange readerServiceExchange) {
         return BindingBuilder.bind(partialUpdateQueue).to(readerServiceExchange).with(PARTIAL_UPDATE_ROUTING_KEY);
 
+    }
+
+    @Bean
+    public Queue lendingQueue() {
+        return new Queue(lendingQueueName, true);
+    }
+
+    @Bean
+    public TopicExchange lendingExchange() {
+        return new TopicExchange(lendingExchangeName);
+    }
+
+    @Bean
+    public Binding lendingQueueBinding(Queue lendingQueue, TopicExchange lendingExchange) {
+        return BindingBuilder.bind(lendingQueue).to(lendingExchange).with("lending.sync.#");
     }
 
     // Conversor de mensagens para JSON

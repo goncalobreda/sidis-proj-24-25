@@ -2,6 +2,8 @@ package com.example.readerserviceQuery.messaging;
 
 import com.example.readerserviceQuery.dto.PartialUpdateDTO;
 import com.example.readerserviceQuery.dto.UserSyncDTO;
+import com.example.readerserviceQuery.model.Lending;
+import com.example.readerserviceQuery.repositories.LendingRepository;
 import com.example.readerserviceQuery.service.ReaderServiceImpl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -15,12 +17,14 @@ public class RabbitMQConsumer {
     private static final Logger logger = LoggerFactory.getLogger(RabbitMQConsumer.class);
 
     private final ReaderServiceImpl readerServiceImpl;
+    private final LendingRepository lendingRepository;
 
     @Value("${instance.id}")
     private String instanceId;
 
-    public RabbitMQConsumer(ReaderServiceImpl readerServiceImpl) {
+    public RabbitMQConsumer(ReaderServiceImpl readerServiceImpl, LendingRepository lendingRepository) {
         this.readerServiceImpl = readerServiceImpl;
+        this.lendingRepository = lendingRepository;
     }
 
     // Consumir mensagens de sincronização
@@ -57,6 +61,29 @@ public class RabbitMQConsumer {
         } catch (Exception e) {
             logger.error("Erro ao aplicar partial update no Query: {}", e.getMessage(), e);
         }
+    }
+
+    @RabbitListener(queues = "${rabbitmq.lending.queue.name}")
+    public void processLendingSync(Lending lending) {
+        logger.info("Mensagem recebida para sincronizar Lending no Reader Query: {}", lending);
+
+        lendingRepository.findByLendingID(lending.getLendingID()).ifPresentOrElse(
+                existing -> {
+                    existing.setBookID(lending.getBookID());
+                    existing.setReaderID(lending.getReaderID());
+                    existing.setStartDate(lending.getStartDate());
+                    existing.setExpectedReturnDate(lending.getExpectedReturnDate());
+                    existing.setReturnDate(lending.getReturnDate());
+                    existing.setOverdue(lending.isOverdue());
+                    existing.setFine(lending.getFine());
+                    lendingRepository.save(existing);
+                    logger.info("Lending atualizado no Reader Query: {}", existing);
+                },
+                () -> {
+                    lendingRepository.save(lending);
+                    logger.info("Novo Lending salvo no Reader Query: {}", lending);
+                }
+        );
     }
 
 }
