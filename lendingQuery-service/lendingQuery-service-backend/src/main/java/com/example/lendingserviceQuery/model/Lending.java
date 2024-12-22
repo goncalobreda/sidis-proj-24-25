@@ -58,6 +58,19 @@ public class Lending {
         // Construtor padrão
     }
 
+    public void updateFieldsFrom(Lending source) {
+        this.bookID = source.getBookID();
+        this.readerID = source.getReaderID();
+        this.startDate = source.getStartDate();
+        this.expectedReturnDate = source.getExpectedReturnDate();
+        this.returnDate = source.getReturnDate();
+        this.overdue = source.isOverdue();
+        this.fine = source.getFine();
+        this.notes = source.getNotes();
+        this.version = source.getVersion();
+    }
+
+
     public Lending(final Long bookID, final String readerID, final LocalDate startDate, final LocalDate returnDate,
                    final LocalDate expectedReturnDate, final boolean overdue, final int fine) {
         this.bookID = bookID;

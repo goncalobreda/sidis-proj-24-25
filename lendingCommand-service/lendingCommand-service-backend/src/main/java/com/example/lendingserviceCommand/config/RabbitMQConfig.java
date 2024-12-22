@@ -17,10 +17,11 @@ public class RabbitMQConfig {
     @Value("${rabbitmq.exchange.name}")
     private String exchangeName;
 
-    public static final String ROUTING_KEY = "user.sync.#";
+    public static final String ROUTING_KEY_PREFIX = "lending.sync.";
 
     @Bean
     public Queue lendingQueue() {
+        // Nome único para cada instância (baseado no nome em application.properties)
         return new Queue(queueName, true);
     }
 
@@ -31,7 +32,8 @@ public class RabbitMQConfig {
 
     @Bean
     public Binding lendingQueueBinding(Queue lendingQueue, TopicExchange lendingExchange) {
-        return BindingBuilder.bind(lendingQueue).to(lendingExchange).with(ROUTING_KEY);
+        // Cada instância terá uma chave de roteamento distinta
+        return BindingBuilder.bind(lendingQueue).to(lendingExchange).with(ROUTING_KEY_PREFIX + "#");
     }
 
     @Bean

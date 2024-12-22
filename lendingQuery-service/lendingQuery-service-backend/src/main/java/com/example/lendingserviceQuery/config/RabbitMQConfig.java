@@ -10,51 +10,56 @@ import org.springframework.context.annotation.Configuration;
 
 @Configuration
 public class RabbitMQConfig {
-    @Value("${rabbitmq.queue.name}")
-    private String queueName; // Este era para readers se bem entendi
+
+    public static final String ROUTING_KEY_READERS = "user.sync.#"; // Para sincronizar Readers
+    public static final String ROUTING_KEY_LENDINGS = "lending.sync.#"; // Para sincronizar Lendings
+
+    @Value("${rabbitmq.lending.queue.name}")
+    private String lendingQueueName;
+
+    @Value("${rabbitmq.reader.queue.name}")
+    private String readerQueueName;
 
     @Value("${rabbitmq.exchange.name}")
     private String exchangeName;
 
-    public static final String ROUTING_KEY_READERS = "user.sync.#";  // para user
-    public static final String ROUTING_KEY_LENDINGS = "lending.sync.#"; // para lending
-
+    // Exchange para o serviço Lending
     @Bean
     public TopicExchange lendingExchange() {
         return new TopicExchange(exchangeName);
     }
 
-    // Fila para Readers (já existia):
+    // Queue para sincronizar Readers
     @Bean
     public Queue readerSyncQueue() {
-        return new Queue(queueName, true);
+        return new Queue(readerQueueName, true);
     }
 
+    // Binding para conectar a queue de Readers à exchange
     @Bean
     public Binding readerSyncBinding(Queue readerSyncQueue, TopicExchange lendingExchange) {
-        // "user.sync.#"
         return BindingBuilder.bind(readerSyncQueue).to(lendingExchange).with(ROUTING_KEY_READERS);
     }
 
-    // == Nova Fila e Binding para Lendings: ==
+    // Queue para sincronizar Lendings
     @Bean
     public Queue lendingSyncQueue() {
-        // Usa outro nome (p.ex. "lendingQuery.sync.queue")
-        return new Queue("lendingQuery.sync.queue", true);
+        return new Queue(lendingQueueName, true);
     }
 
+    // Binding para conectar a queue de Lendings à exchange
     @Bean
     public Binding lendingSyncBinding(Queue lendingSyncQueue, TopicExchange lendingExchange) {
-        // "lending.sync.#"
         return BindingBuilder.bind(lendingSyncQueue).to(lendingExchange).with(ROUTING_KEY_LENDINGS);
     }
 
-    // Converter e template
+    // Configuração para serialização/deserialização de mensagens
     @Bean
     public Jackson2JsonMessageConverter jacksonMessageConverter() {
         return new Jackson2JsonMessageConverter();
     }
 
+    // Configuração do RabbitTemplate
     @Bean
     public RabbitTemplate rabbitTemplate(ConnectionFactory connectionFactory) {
         RabbitTemplate rabbitTemplate = new RabbitTemplate(connectionFactory);

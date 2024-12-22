@@ -5,7 +5,6 @@ import com.example.lendingserviceQuery.model.Lending;
 import com.example.lendingserviceQuery.model.Reader;
 import com.example.lendingserviceQuery.repositories.LendingRepository;
 import com.example.lendingserviceQuery.repositories.ReaderRepository;
-import com.example.lendingserviceQuery.service.LendingService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
@@ -19,73 +18,58 @@ public class RabbitMQConsumer {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(RabbitMQConsumer.class);
 
-    private final LendingService lendingService;  // se quiseres
     private final ReaderRepository readerRepository;
     private final LendingRepository lendingRepository;
 
-    public RabbitMQConsumer(
-            LendingService lendingService,
-            ReaderRepository readerRepository,
-            LendingRepository lendingRepository
-    ) {
-        this.lendingService = lendingService;
+    public RabbitMQConsumer(ReaderRepository readerRepository, LendingRepository lendingRepository) {
         this.readerRepository = readerRepository;
         this.lendingRepository = lendingRepository;
     }
 
-    /**
-     * 1) Recebe Readers (UserSyncDTO) via "lending1.reader.sync.command.queue"
-     */
-    @RabbitListener(queues = "lending1.reader.sync.command.queue")
-    public void processSyncMessage(UserSyncDTO userSyncDTO) {
-        LOGGER.info("Mensagem recebida para sincronizar Reader (LendingQuery): {}", userSyncDTO);
+    @RabbitListener(queues = "${rabbitmq.reader.queue.name}")
+    public void processReaderSync(UserSyncDTO userSyncDTO) {
+        LOGGER.info("Mensagem recebida para sincronizar Reader: {}", userSyncDTO);
 
         String userEmail = userSyncDTO.getUsername();
-        String userFullName = userSyncDTO.getFullName();
+        Optional<Reader> existingReaderOpt = readerRepository.findByEmail(userEmail);
 
-        if (!readerRepository.existsByEmail(userEmail)) {
-            LOGGER.info("Usuário não encontrado. Criando novo leitor com email: {}", userEmail);
+        if (existingReaderOpt.isPresent()) {
+            Reader existingReader = existingReaderOpt.get();
+            existingReader.setFullName(userSyncDTO.getFullName());
+            existingReader.setEnabled(userSyncDTO.isEnabled());
+            readerRepository.save(existingReader);
+            LOGGER.info("Reader atualizado com sucesso: {}", existingReader);
+        } else {
             Reader newReader = new Reader();
             newReader.setEmail(userEmail);
-            newReader.setFullName(userFullName);
-            newReader.setCreatedAt(LocalDateTime.now());
+            newReader.setFullName(userSyncDTO.getFullName());
             newReader.setEnabled(userSyncDTO.isEnabled());
+            newReader.setCreatedAt(LocalDateTime.now());
             newReader.setUniqueReaderID();
             readerRepository.save(newReader);
-            LOGGER.info("Novo leitor criado com sucesso: {}", newReader);
-        } else {
-            LOGGER.info("Usuário já existe: {}", userEmail);
+            LOGGER.info("Novo Reader criado com sucesso: {}", newReader);
         }
-        LOGGER.info("Reader sincronizado com sucesso para o User: {}", userEmail);
     }
 
-    /**
-     * 2) Recebe Lendings no Query side via "lendingQuery.sync.queue"
-     *    que está ligado a routingKey "lending.sync.#"
-     */
-    @RabbitListener(queues = "lendingQuery.sync.queue")
-    public void processLendingSync(Lending incomingLending) {
-        LOGGER.info("Recebido Lending via RabbitMQ (LendingQuery): {}", incomingLending);
+    @RabbitListener(queues = "${rabbitmq.lending.queue.name}")
+    public void processLendingSync(Lending lending) {
+        LOGGER.info("Mensagem recebida para sincronizar Lending: {}", lending);
 
-        Optional<Lending> existingOpt = lendingRepository.findByLendingID(incomingLending.getLendingID());
+        Optional<Lending> existingOpt = lendingRepository.findByLendingID(lending.getLendingID());
         if (existingOpt.isPresent()) {
-            // Atualiza
             Lending existing = existingOpt.get();
-            existing.setBookID(incomingLending.getBookID());
-            existing.setReaderID(incomingLending.getReaderID());
-            existing.setStartDate(incomingLending.getStartDate());
-            existing.setExpectedReturnDate(incomingLending.getExpectedReturnDate());
-            existing.setReturnDate(incomingLending.getReturnDate());
-            existing.setOverdue(incomingLending.isOverdue());
-            existing.setFine(incomingLending.getFine());
-            existing.setNotes(incomingLending.getNotes());
-            existing.setVersion(incomingLending.getVersion());
+            existing.setBookID(lending.getBookID());
+            existing.setReaderID(lending.getReaderID());
+            existing.setStartDate(lending.getStartDate());
+            existing.setExpectedReturnDate(lending.getExpectedReturnDate());
+            existing.setReturnDate(lending.getReturnDate());
+            existing.setOverdue(lending.isOverdue());
+            existing.setFine(lending.getFine());
             lendingRepository.save(existing);
-            LOGGER.info("Lending atualizado na Query DB: {}", existing.getLendingID());
+            LOGGER.info("Lending atualizado com sucesso: {}", existing);
         } else {
-            // Insere novo
-            Lending saved = lendingRepository.save(incomingLending);
-            LOGGER.info("Lending criado na Query DB: {}", saved.getLendingID());
+            lendingRepository.save(lending);
+            LOGGER.info("Novo Lending criado com sucesso: {}", lending);
         }
     }
 }

@@ -22,6 +22,9 @@ public class Reader {
     @Column(unique = true, nullable = false)
     private String email;
 
+    @Column(nullable = true) // Telefone é opcional
+    private String phoneNumber;
+
     @Column(nullable = false, updatable = false)
     @NotNull
     private LocalDateTime createdAt;
@@ -101,6 +104,14 @@ public class Reader {
 
     public void setEmail(String email) {
         this.email = email;
+    }
+
+    public String getPhoneNumber() {
+        return phoneNumber;
+    }
+
+    public void setPhoneNumber(String phoneNumber) {
+        this.phoneNumber = phoneNumber;
     }
 
     public LocalDateTime getCreatedAt() {
