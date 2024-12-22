@@ -24,8 +24,9 @@ public class RabbitMQProducer {
     public <T> void sendMessage(String routingKeyPrefix, T message) {
         try {
             String routingKey = routingKeyPrefix + "." + instanceId + ".sync";
+            // Ex.: "lending.sync.lending1.sync"
             rabbitTemplate.convertAndSend(exchangeName, routingKey, message);
-            logger.info("Mensagem enviada para o Exchange '{}' com routingKey '{}'", exchangeName, routingKey);
+            logger.info("Mensagem enviada: Exchange='{}', routingKey='{}'", exchangeName, routingKey);
         } catch (Exception e) {
             logger.error("Erro ao enviar mensagem para RabbitMQ: {}", e.getMessage(), e);
         }

@@ -1,10 +1,10 @@
 package com.example.lendingserviceCommand.api;
 
+import com.example.lendingserviceCommand.dto.CreateLendingDTO;
 import com.example.lendingserviceCommand.model.Lending;
 import com.example.lendingserviceCommand.repositories.LendingRepository;
-import com.example.lendingserviceCommand.service.LendingService;
-import com.example.lendingserviceCommand.service.CreateLendingRequest;
 import com.example.lendingserviceCommand.service.EditLendingRequest;
+import com.example.lendingserviceCommand.service.LendingService;
 import com.example.lendingserviceCommand.service.LendingServiceImpl;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -29,30 +29,32 @@ public class LendingController {
     @Autowired
     private LendingServiceImpl lendingService;
 
-
-
-    @Operation(summary = "Creates a new lending")
+    @Operation(summary = "Creates a new lending using CreateLendingDTO")
     @PostMapping
-    public ResponseEntity<LendingView> create(@RequestBody @Valid CreateLendingRequest request) {
-        final var lending = service.create(request);
+    public ResponseEntity<LendingView> create(@RequestBody @Valid CreateLendingDTO createLendingDTO) {
+        // 1) Chama o service passando o DTO
+        final Lending lending = service.create(createLendingDTO);
+        // 2) Converte para LendingView e retorna
         return ResponseEntity.ok(lendingViewMapper.toLendingView(lending));
     }
 
     @Operation(summary = "Partially updates an existing lending")
     @PatchMapping(value = "/{id1}/{id2}")
-    public ResponseEntity<LendingView> partialUpdate(@PathVariable("id1") final int id1, @PathVariable("id2") final int id2,
-                                                     @Valid @RequestBody final EditLendingRequest resource) {
+    public ResponseEntity<LendingView> partialUpdate(
+            @PathVariable("id1") final int id1,
+            @PathVariable("id2") final int id2,
+            @RequestBody @Valid final EditLendingRequest resource
+    ) {
         final var lending = service.partialUpdate(id1, id2, resource, 1L);
         return ResponseEntity.ok().body(lendingViewMapper.toLendingView(lending));
     }
 
     @PostMapping("/sync")
     public ResponseEntity<Lending> createLendingSync(@RequestBody Lending lending) {
+        // Lógica existente que lida com sincronização manual/forçada
         Optional<Lending> existingLending = lendingRepository.findByLendingID(lending.getLendingID());
-
         if (existingLending.isPresent()) {
             Lending existing = existingLending.get();
-            // Atualiza os campos modificados, sem validar a versão
             existing.setBookID(lending.getBookID());
             existing.setReaderID(lending.getReaderID());
             existing.setStartDate(lending.getStartDate());
@@ -61,14 +63,10 @@ public class LendingController {
             existing.setOverdue(lending.isOverdue());
             existing.setFine(lending.getFine());
             existing.setNotes(lending.getNotes());
-            lending.updateOverdueStatus();
-
             existing.setVersion(lending.getVersion());
-
-            Lending updatedLending = lendingRepository.save(existing); // Atualiza a entidade
-            return ResponseEntity.ok(updatedLending);
+            lendingRepository.save(existing);
+            return ResponseEntity.ok(existing);
         } else {
-            // Se o empréstimo não existir, cria um novo
             Lending savedLending = lendingRepository.save(lending);
             return ResponseEntity.ok(savedLending);
         }

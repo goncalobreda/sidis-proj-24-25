@@ -1,5 +1,6 @@
 package com.example.lendingserviceCommand.service;
 
+import com.example.lendingserviceCommand.dto.CreateLendingDTO;
 import com.example.lendingserviceCommand.dto.UserSyncDTO;
 import com.example.lendingserviceCommand.model.Reader;
 import com.example.lendingserviceCommand.repositories.ReaderRepository;
@@ -88,36 +89,33 @@ public class LendingServiceImpl implements LendingService {
     }
 
     @Override
-    public Lending create(CreateLendingRequest request) {
-        // Validação e sincronização via RabbitMQ
-        Long bookID = request.getBookID();
-        String readerID = request.getReaderID();
+    public Lending create(CreateLendingDTO dto) {
+        // 1) Validações
+        Long bookID = dto.getBookID();
+        String readerID = dto.getReaderID();
 
-        // Verificar se o reader tem empréstimos em atraso
-        boolean hasOverdueLending = lendingRepository.existsByReaderIDAndOverdueTrue(readerID);
-        if (hasOverdueLending) {
+        // Exemplo de validações de overdue etc.:
+        if (lendingRepository.existsByReaderIDAndOverdueTrue(readerID)) {
             throw new IllegalArgumentException("Reader has overdue lending and cannot borrow more books.");
         }
-
-        // Verificar se o reader já tem 3 livros emprestados
         long activeLendingsCount = lendingRepository.countActiveLendingsByReaderID(readerID);
         if (activeLendingsCount >= 3) {
             throw new IllegalArgumentException("Reader already has the maximum number of active lendings (3).");
         }
 
-        // Criar o empréstimo com os dados obtidos
+        // 2) Cria Lending
         LocalDate startDate = LocalDate.now();
         LocalDate expectedReturnDate = startDate.plusDays(14);
-
         Lending lending = new Lending(bookID, readerID, startDate, null, expectedReturnDate, false, 0);
         lending.updateOverdueStatus();
         Lending savedLending = lendingRepository.save(lending);
 
-        // Publicar mensagem para sincronizar com outras instâncias
+        // 3) Envia Mensagem p/ Query
         rabbitMQProducer.sendMessage("lending.sync", savedLending);
 
         return savedLending;
     }
+
 
     @Override
     public Lending partialUpdate(int id1, int id2, EditLendingRequest resource, long desiredVersion) {

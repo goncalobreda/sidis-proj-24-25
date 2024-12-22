@@ -1,5 +1,6 @@
 package com.example.lendingserviceCommand.service;
 
+import com.example.lendingserviceCommand.dto.CreateLendingDTO;
 import com.example.lendingserviceCommand.model.Lending;
 
 import java.util.List;
@@ -15,7 +16,7 @@ public interface LendingService {
     Optional<String> findReaderByLendingID(String lendingID);  // Retorna apenas o ID do Reader
     Optional<Lending> getLastId();
     List<Lending> getOverdueLendingsSortedByTardiness();
-    Lending create(CreateLendingRequest request);
+    Lending create(CreateLendingDTO dto);
 
 
     Lending partialUpdate(int id1, int id2, EditLendingRequest resource, long desiredVersion);
