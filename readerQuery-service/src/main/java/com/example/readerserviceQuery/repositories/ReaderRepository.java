@@ -1,7 +1,7 @@
 package com.example.readerserviceQuery.repositories;
 
 import com.example.readerserviceQuery.model.Reader;
-import com.example.readerserviceQuery.model.ReaderCountDTO;
+import com.example.readerserviceQuery.dto.ReaderCountDTO;
 import com.example.readerserviceQuery.service.Page;
 import com.example.readerserviceQuery.service.SearchReadersQuery;
 

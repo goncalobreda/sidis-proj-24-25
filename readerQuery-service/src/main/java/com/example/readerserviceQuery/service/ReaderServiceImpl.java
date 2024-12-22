@@ -3,7 +3,7 @@ package com.example.readerserviceQuery.service;
 import com.example.readerserviceQuery.dto.PartialUpdateDTO;
 import com.example.readerserviceQuery.dto.UserSyncDTO;
 import com.example.readerserviceQuery.model.Reader;
-import com.example.readerserviceQuery.model.ReaderCountDTO;
+import com.example.readerserviceQuery.dto.ReaderCountDTO;
 import com.example.readerserviceQuery.repositories.ReaderRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

@@ -1,8 +1,7 @@
 package com.example.readerserviceQuery.api;
 
-import com.example.readerserviceQuery.client.GenreDTO;
 import com.example.readerserviceQuery.model.Reader;
-import com.example.readerserviceQuery.model.ReaderCountDTO;
+import com.example.readerserviceQuery.dto.ReaderCountDTO;
 import com.example.readerserviceQuery.service.ReaderServiceImpl;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -11,7 +10,6 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -20,7 +18,6 @@ import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Set;
 
 @Tag(name = "Readers", description = "Endpoints for managing readers")
 @RestController
@@ -52,7 +49,6 @@ class ReaderController {
         String authenticatedEmail = getAuthenticatedEmail();
         boolean isLibrarian = hasRole("LIBRARIAN");
 
-        // Adicionar logs para diagnóstico
         System.out.println("Authenticated email: " + authenticatedEmail);
         System.out.println("Is librarian: " + isLibrarian);
         System.out.println("Requested reader ID: " + readerID);
@@ -72,9 +68,6 @@ class ReaderController {
                     return ResponseEntity.notFound().build();
                 });
     }
-
-
-
 
     private String getAuthenticatedEmail() {
         Jwt jwt = (Jwt) SecurityContextHolder.getContext().getAuthentication().getPrincipal();

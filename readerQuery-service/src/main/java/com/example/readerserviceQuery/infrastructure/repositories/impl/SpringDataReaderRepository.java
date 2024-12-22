@@ -1,7 +1,7 @@
 package com.example.readerserviceQuery.infrastructure.repositories.impl;
 
 import com.example.readerserviceQuery.model.Reader;
-import com.example.readerserviceQuery.model.ReaderCountDTO;
+import com.example.readerserviceQuery.dto.ReaderCountDTO;
 import com.example.readerserviceQuery.repositories.ReaderRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.CrudRepository;
@@ -33,6 +33,12 @@ public interface SpringDataReaderRepository extends ReaderRepository, ReaderRepo
     @Query("SELECT COUNT(r) FROM Reader r")
     long count();
 
-    @Query("SELECT r FROM Reader r ORDER BY r.createdAt DESC")
+    @Override
+    @Query("SELECT new com.example.readerserviceQuery.dto.ReaderCountDTO(r.readerID, r.fullName, COUNT(l)) " +
+            "FROM Reader r " +
+            "JOIN Lending l ON r.readerID = l.readerID " +
+            "GROUP BY r.readerID, r.fullName " +
+            "ORDER BY COUNT(l) DESC")
     List<ReaderCountDTO> findTop5Readers();
+
 }

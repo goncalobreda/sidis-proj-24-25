@@ -48,17 +48,14 @@ public class RabbitMQConsumer {
     public void processPartialUpdate(PartialUpdateDTO partialUpdateDTO) {
         logger.info("Mensagem recebida para partial update: {}", partialUpdateDTO);
 
-        // Ignorar mensagens originadas da própria instância
         if (instanceId.equals(partialUpdateDTO.getOriginInstanceId())) {
             logger.info("Mensagem ignorada. Originada da mesma instância: {}", instanceId);
             return;
         }
 
         try {
-            // Monta seu request a partir do partialUpdateDTO
             EditReaderRequest request = new EditReaderRequest(partialUpdateDTO.getPhoneNumber());
 
-            // Agora chama o método SEM republicar
             readerServiceImpl.partialUpdateFromConsumer(partialUpdateDTO.getReaderID(), request, 0);
 
             logger.info("Partial update (de outra instância) aplicado com sucesso para o Reader: {}",
