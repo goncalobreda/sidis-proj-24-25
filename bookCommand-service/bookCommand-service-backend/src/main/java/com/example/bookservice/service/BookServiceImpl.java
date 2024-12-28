@@ -2,6 +2,7 @@ package com.example.bookservice.service;
 
 
 
+import com.example.bookservice.dto.BookSyncDTO;
 import com.example.bookservice.messaging.RabbitMQProducer;
 import com.example.bookservice.model.*;
 import com.example.bookservice.repositories.AuthorRepository;
@@ -18,6 +19,9 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import com.example.bookservice.repositories.BookRepository;
 import org.springframework.web.client.RestTemplate;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -30,6 +34,8 @@ public class BookServiceImpl implements BookService {
     private final GenreRepository genreRepository;
     private final BookImageRepository bookImageRepository;
     private final RabbitMQProducer rabbitMQProducer;
+    private static final Logger logger = LoggerFactory.getLogger(BookServiceImpl.class);
+
 
     public BookServiceImpl(
             BookRepository bookRepository,
@@ -45,8 +51,71 @@ public class BookServiceImpl implements BookService {
     }
 
     @Override
+    public void syncBook(BookSyncDTO bookSyncDTO) {
+        logger.info("Iniciando sincronização do livro com ISBN: {}", bookSyncDTO.getIsbn());
+
+        // Validar o DTO recebido
+        if (bookSyncDTO.getIsbn() == null || bookSyncDTO.getTitle() == null || bookSyncDTO.getAuthors() == null) {
+            logger.error("Dados incompletos no BookSyncDTO: {}", bookSyncDTO);
+            return;
+        }
+
+        try {
+            // Buscar ou criar o livro
+            Book book = bookRepository.findByIsbn(bookSyncDTO.getIsbn())
+                    .orElseGet(() -> {
+                        logger.info("Livro não encontrado, criando um novo com ISBN: {}", bookSyncDTO.getIsbn());
+                        return new Book();
+                    });
+
+            // Atualizar informações do livro
+            book.setIsbn(bookSyncDTO.getIsbn());
+            book.setTitle(bookSyncDTO.getTitle());
+            book.setDescription(bookSyncDTO.getDescription());
+            logger.info("Dados do livro atualizados: Title = {}, Description = {}", book.getTitle(), book.getDescription());
+
+            // Buscar ou criar o gênero
+            Genre genre = genreRepository.findByInterest(bookSyncDTO.getGenre());
+            if (genre != null) {
+                book.setGenre(genre);
+                logger.info("Gênero associado ao livro: {}", genre.getInterest());
+            } else {
+                logger.warn("Gênero não encontrado para o interesse: {}", bookSyncDTO.getGenre());
+            }
+
+            // Processar autores
+            List<Author> authors = bookSyncDTO.getAuthors().stream()
+                    .map(authorDTO -> {
+                        logger.info("Sincronizando autor com ID: {}", authorDTO.getAuthorID());
+                        return authorRepository.findByAuthorID(authorDTO.getAuthorID())
+                                .orElseGet(() -> {
+                                    logger.info("Autor não encontrado, criando um novo com ID: {}", authorDTO.getAuthorID());
+                                    Author newAuthor = new Author();
+                                    newAuthor.setAuthorID(authorDTO.getAuthorID());
+                                    newAuthor.setName(authorDTO.getName());
+                                    newAuthor.setBiography(authorDTO.getBiography());
+                                    return authorRepository.save(newAuthor);
+                                });
+                    })
+                    .collect(Collectors.toList());
+
+            // Associar os autores ao livro
+            book.setAuthor(authors);
+            logger.info("Autores associados ao livro: {}", authors.stream().map(Author::getAuthorID).toList());
+
+            // Salvar o livro no banco de dados
+            bookRepository.save(book);
+            logger.info("Livro sincronizado e salvo com sucesso: ISBN = {}", book.getIsbn());
+
+        } catch (Exception e) {
+            logger.error("Erro ao sincronizar livro: {}", e.getMessage(), e);
+        }
+    }
+
+
+
+    @Override
     public Book create(CreateBookRequest request) {
-        // Validação para garantir que o ISBN é único
         if (request.getIsbn() == null || request.getIsbn().isBlank()) {
             throw new IllegalArgumentException("O ISBN não pode ser vazio.");
         }
@@ -55,31 +124,33 @@ public class BookServiceImpl implements BookService {
             throw new IllegalArgumentException("O ISBN já está em uso.");
         }
 
-        // Buscar o gênero pelo interesse
         Genre genre = genreRepository.findByInterest(request.getGenre());
         if (genre == null) {
             throw new IllegalArgumentException("Gênero não encontrado: " + request.getGenre());
         }
 
         List<Author> authors = new ArrayList<>();
-        for (String authorId : request.getAuthorIds()) {
-            Author author = authorRepository.findByAuthorID(authorId)
-                    .orElseThrow(() -> new IllegalArgumentException("Author not found with ID: " + authorId));
-            authors.add(author);
+        if (request.getAuthorIds() != null) {
+            authors = request.getAuthorIds().stream()
+                    .map(authorId -> authorRepository.findByAuthorID(authorId)
+                            .orElseThrow(() -> new IllegalArgumentException("Autor não encontrado com ID: " + authorId)))
+                    .collect(Collectors.toList());
         }
 
+        BookImage bookImage = bookImageRepository.findById(request.getBookImageId())
+                .orElseThrow(() -> new IllegalArgumentException("Imagem não encontrada com ID: " + request.getBookImageId()));
 
-        // Criar livro
         Book book = new Book();
         book.setIsbn(request.getIsbn());
         book.setTitle(request.getTitle());
-        book.setGenre(genre);
         book.setDescription(request.getDescription());
+        book.setGenre(genre);
+        book.setAuthor(authors);
+        book.setBookImage(bookImage); // Certifique-se de que o campo existe no request.
 
-        // Salvar no banco de dados
+
         book = bookRepository.save(book);
 
-        // Enviar evento de sincronização para RabbitMQ
         rabbitMQProducer.sendBookSyncEvent(book);
 
         return book;
@@ -88,27 +159,31 @@ public class BookServiceImpl implements BookService {
 
     @Override
     public Book partialUpdate(Long bookID, EditBookRequest request, long desiredVersion) {
+        Book book = bookRepository.findById(bookID)
+                .orElseThrow(() -> new IllegalArgumentException("Livro não encontrado"));
 
-        Genre genre = genreRepository.findByInterest(request.getGenre());
-        if (genre == null) {
-            throw new IllegalArgumentException("Genre not found: " + request.getGenre());
+        if (request.getTitle() != null) {
+            book.setTitle(request.getTitle());
         }
 
-        Book book = bookRepository.findById(bookID)
-                .orElseThrow(() -> new IllegalArgumentException("Book not found"));
+        if (request.getDescription() != null) {
+            book.setDescription(request.getDescription());
+        }
 
-        book.setTitle(request.getTitle());
-        book.setGenre(genre);
-        book.setDescription(request.getDescription());
-        book.setVersion(desiredVersion);
+        if (request.getGenre() != null) {
+            Genre genre = genreRepository.findByInterest(request.getGenre());
+            if (genre != null) {
+                book.setGenre(genre);
+            }
+        }
+
+        book.applyPatch(desiredVersion, book.getTitle(), book.getGenre(), book.getDescription());
         book = bookRepository.save(book);
 
-        // Enviar evento de atualização
-        rabbitMQProducer.sendBookSyncEvent(book);
+        rabbitMQProducer.sendPartialUpdateEvent(book);
 
         return book;
     }
-
 
 
     @Override
@@ -137,23 +212,5 @@ public class BookServiceImpl implements BookService {
         bookImageRepository.save(bookImage); // Salva a imagem no banco de dados
     }
 
-/*
-    @Override
-    public List<BookCountDTO> findTop5Books() {
-        List<LendingDTO> lendings = lendingServiceClient.getAllLendings();
-
-        Map<Long, Long> bookIdCounts = lendings.stream()
-                .collect(Collectors.groupingBy(LendingDTO::getBookID, Collectors.counting()));
-
-        List<Map.Entry<Long, Long>> top5Books = bookIdCounts.entrySet().stream()
-                .sorted(Map.Entry.<Long, Long>comparingByValue().reversed())
-                .limit(5)
-                .collect(Collectors.toList());
-
-        return top5Books.stream()
-                .map(entry -> new BookCountDTO(entry.getKey(), entry.getValue()))
-                .collect(Collectors.toList());
-    }
-*/
 
 }

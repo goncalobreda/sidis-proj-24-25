@@ -1,62 +1,67 @@
 package com.example.bookservice.messaging;
 
+import com.example.bookservice.config.RabbitMQConfig;
+import com.example.bookservice.dto.AuthorDTO;
 import com.example.bookservice.dto.BookSyncDTO;
 import com.example.bookservice.model.Author;
 import com.example.bookservice.model.Book;
-import com.example.bookservice.config.RabbitMQConfig;
+import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 @Component
+@RequiredArgsConstructor
 public class RabbitMQProducer {
 
     private static final Logger logger = LoggerFactory.getLogger(RabbitMQProducer.class);
 
     private final RabbitTemplate rabbitTemplate;
 
-    public RabbitMQProducer(RabbitTemplate rabbitTemplate) {
-        this.rabbitTemplate = rabbitTemplate;
-    }
+    @Value("${instance.id}")
+    private String instanceId;
 
+    @Value("${rabbitmq.exchange.name}")
+    private String bookCommandExchange;
 
     public void sendBookSyncEvent(Book book) {
         try {
-            BookSyncDTO bookSyncDTO = new BookSyncDTO(
-                    book.getIsbn(),
-                    book.getTitle(),
-                    book.getGenre().getInterest(),
-                    book.getDescription()
-            );
+            BookSyncDTO eventDTO = BookSyncDTO.fromBook("sync", book, instanceId);
 
-            rabbitTemplate.convertAndSend(
-                    RabbitMQConfig.BOOK_COMMAND_EXCHANGE,
-                    RabbitMQConfig.BOOK_ROUTING_KEY,
-                    bookSyncDTO
-            );
+            // Enviar para a instância do Query
+            rabbitTemplate.convertAndSend(bookCommandExchange, "book.sync.query.book1", eventDTO);
+            logger.info("Book sync event sent to Query: {}", eventDTO);
 
-            logger.info("Evento de sincronização enviado: {}", bookSyncDTO);
+            // Enviar para a segunda instância do Command
+            rabbitTemplate.convertAndSend(bookCommandExchange, "book.sync.command.book2", eventDTO);
+            logger.info("Book sync event sent to Command Instance 2: {}", eventDTO);
         } catch (Exception e) {
-            logger.error("Erro ao enviar evento de sincronização: {}", e.getMessage(), e);
+            logger.error("Erro ao enviar evento de sincronização do livro: {}", e.getMessage(), e);
         }
     }
 
 
+    public void sendPartialUpdateEvent(Book book) {
+        try {
+            BookSyncDTO eventDTO = BookSyncDTO.fromBook("update", book, instanceId);
+            rabbitTemplate.convertAndSend(bookCommandExchange, "book.partial.update." + instanceId, eventDTO); // Utiliza a exchange da propriedade
+            logger.info("Book partial update event sent: {}", eventDTO);
+        } catch (Exception e) {
+            logger.error("Erro ao enviar evento de atualização parcial do livro: {}", e.getMessage(), e);
+        }
+    }
+
     public void sendAuthorEvent(String action, Author author) {
         try {
-            // Crie uma mensagem contendo a ação e o autor
-            AuthorEventMessage message = new AuthorEventMessage(action, author.getAuthorID(), author.getName(), author.getBiography());
-
-            // Envie a mensagem para o RabbitMQ
-            rabbitTemplate.convertAndSend(
-                    RabbitMQConfig.AUTHOR_COMMAND_EXCHANGE,
-                    RabbitMQConfig.AUTHOR_ROUTING_KEY,
-                    message
-            );
-            logger.info("Evento de autor enviado: ação={}, autorID={}", action, author.getAuthorID());
+            AuthorDTO authorDTO = AuthorDTO.fromAuthor(author);
+            rabbitTemplate.convertAndSend(bookCommandExchange, "author.sync." + instanceId, authorDTO); // Utiliza a exchange da propriedade
+            logger.info("Author event sent: {}", authorDTO);
         } catch (Exception e) {
             logger.error("Erro ao enviar evento de autor: {}", e.getMessage(), e);
         }
     }
+
+
 }

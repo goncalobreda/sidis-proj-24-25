@@ -47,7 +47,7 @@ class BookServiceUnitTest {
     private BookImageRepository bookImageRepository;
     private BookServiceImpl bookService;
 
-    private RestTemplate restTemplate;
+    private RestTemplate customRestTemplate;
 
     @BeforeEach
     void setUp() {
@@ -56,8 +56,8 @@ class BookServiceUnitTest {
         authorRepository = Mockito.mock(AuthorRepository.class);
         bookImageRepository = Mockito.mock(BookImageRepository.class);
 
-        restTemplate = new RestTemplate();
-        bookService = new BookServiceImpl(bookRepository, bookImageRepository, genreRepository, authorRepository, restTemplate);
+        customRestTemplate = new RestTemplate();
+        bookService = new BookServiceImpl(bookRepository, bookImageRepository, genreRepository, authorRepository, customRestTemplate);
 
         ReflectionTestUtils.setField(bookService, "currentPort", "8082");
     }

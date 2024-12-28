@@ -1,5 +1,6 @@
 package com.example.bookservice.service;
 
+import com.example.bookservice.dto.BookSyncDTO;
 import com.example.bookservice.model.Book;
 import com.example.bookservice.model.BookCountDTO;
 import com.example.bookservice.model.Genre;
@@ -13,6 +14,7 @@ import java.util.Optional;
 @Service
 public interface BookService {
 
+    void syncBook(BookSyncDTO bookSyncDTO);
 
     Book create(CreateBookRequest request);
 

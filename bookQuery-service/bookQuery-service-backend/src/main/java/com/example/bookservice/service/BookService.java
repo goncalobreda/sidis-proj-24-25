@@ -1,9 +1,10 @@
 package com.example.bookservice.service;
 
+import com.example.bookservice.dto.BookSyncDTO;
+import com.example.bookservice.dto.PartialUpdateDTO;
 import com.example.bookservice.model.Book;
 import com.example.bookservice.model.BookCountDTO;
 import com.example.bookservice.model.Genre;
-import com.example.bookservice.model.GenreBookCountDTO;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -12,6 +13,10 @@ import java.util.Optional;
 
 @Service
 public interface BookService {
+
+    Book createOrUpdateFromBookSyncDTO(BookSyncDTO bookSyncDTO);
+
+    void applyPartialUpdate(PartialUpdateDTO partailUpdateDTO);
 
     Optional<Book> getBookByIsbn(final String isbn);
 
@@ -25,7 +30,7 @@ public interface BookService {
 
    List<Map.Entry<String, Long>> findTop5Genres();
 
-  //  List<BookCountDTO> findTop5Books();
+    List<BookCountDTO> findTop5Books();
 
     Optional<Book> getBookById(final Long bookID);
 

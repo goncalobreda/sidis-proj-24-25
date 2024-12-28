@@ -4,61 +4,95 @@ import org.springframework.amqp.core.*;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.amqp.support.converter.Jackson2JsonMessageConverter;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 @Configuration
 public class RabbitMQConfig {
 
-    // Exchanges
-    public static final String BOOK_COMMAND_EXCHANGE = "book-command-exchange";
-    public static final String AUTHOR_COMMAND_EXCHANGE = "author-command-exchange";
+    @Value("${rabbitmq.queue.book.sync}")
+    private String bookSyncQueueName;
 
-    // Routing Keys
-    public static final String BOOK_ROUTING_KEY = "book.sync.event";
-    public static final String AUTHOR_ROUTING_KEY = "author.sync.event";
+    @Value("${rabbitmq.queue.book.event}")
+    private String bookEventQueueName;
 
-    // Queues
-    public static final String BOOK_EVENT_QUEUE = "book-event-queue";
-    public static final String BOOK_SYNC_QUEUE = "book-sync-queue"; // Adicionada a fila ausente
+    @Value("${rabbitmq.partial.update.queue.name}")
+    private String partialUpdateQueueName;
 
-    // Configuração da Fila de Eventos de Livro
-    @Bean
-    public Queue bookEventQueue() {
-        return new Queue(BOOK_EVENT_QUEUE, true); // true -> Fila persistente
-    }
+    @Value("${rabbitmq.queue.author.sync}")
+    private String authorSyncQueueName;
 
-    // Configuração da Fila de Sincronização de Livro
-    @Bean
-    public Queue bookSyncQueue() {
-        return new Queue(BOOK_SYNC_QUEUE, true);
-    }
+    @Value("${rabbitmq.exchange.name}")
+    private String bookCommandExchange;
 
-    // Configuração da Exchange de Comandos de Livro
     @Bean
     public TopicExchange bookCommandExchange() {
-        return new TopicExchange(BOOK_COMMAND_EXCHANGE);
+        return new TopicExchange(bookCommandExchange);
     }
 
-    // Binding entre a fila de eventos de livro e a exchange de comandos
     @Bean
-    public Binding bookEventQueueBinding(Queue bookEventQueue, TopicExchange bookCommandExchange) {
-        return BindingBuilder.bind(bookEventQueue).to(bookCommandExchange).with(BOOK_ROUTING_KEY);
+    @Qualifier("authorSyncQueue")
+    public Queue authorSyncQueue() {
+        return new Queue(authorSyncQueueName, true);
     }
 
-    // Binding entre a fila de sincronização de livro e a exchange de comandos
     @Bean
-    public Binding bookSyncBinding(Queue bookSyncQueue, TopicExchange bookCommandExchange) {
-        return BindingBuilder.bind(bookSyncQueue).to(bookCommandExchange).with(BOOK_ROUTING_KEY);
+    @Qualifier("bookSyncQueue")
+    public Queue bookSyncQueue() {
+        return new Queue(bookSyncQueueName, true);
     }
 
-    // Conversor de Mensagens JSON
+    @Bean
+    @Qualifier("partialUpdateQueue")
+    public Queue partialUpdateQueue() {
+        return new Queue(partialUpdateQueueName, true);
+    }
+
+    @Bean
+    @Qualifier("bookEventQueue")
+    public Queue bookEventQueue() {
+        return new Queue(bookEventQueueName, true);
+    }
+
+
+
+    // Bindings
+    @Bean
+    public Binding bindingInstance1(@Qualifier("bookSyncQueue") Queue bookSyncQueue, TopicExchange bookCommandExchange) {
+        return BindingBuilder.bind(bookSyncQueue).to(bookCommandExchange).with("book.sync.command.book1");
+    }
+
+    @Bean
+    public Binding bindingInstance2(@Qualifier("bookSyncQueue") Queue bookSyncQueue, TopicExchange bookCommandExchange) {
+        return BindingBuilder.bind(bookSyncQueue).to(bookCommandExchange).with("book.sync.command.book2");
+    }
+
+    @Bean
+    public Binding partialUpdateBinding(@Qualifier("partialUpdateQueue") Queue partialUpdateQueue, TopicExchange bookCommandExchange) {
+        return BindingBuilder.bind(partialUpdateQueue).to(bookCommandExchange).with("book.partial.update.#");
+    }
+
+
+    @Bean
+    public Binding bookEventBinding(@Qualifier("bookEventQueue") Queue bookEventQueue, TopicExchange bookCommandExchange) {
+        return BindingBuilder.bind(bookEventQueue).to(bookCommandExchange).with("book.event.#");
+    }
+
+
+    @Bean
+    public Binding authorSyncBinding(Queue authorSyncQueue, TopicExchange bookCommandExchange) {
+        return BindingBuilder.bind(authorSyncQueue).to(bookCommandExchange).with("author.sync.#");
+    }
+
+    // Message Converter
     @Bean
     public Jackson2JsonMessageConverter messageConverter() {
         return new Jackson2JsonMessageConverter();
     }
 
-    // Configuração do RabbitTemplate com Conversor de Mensagens
+    // RabbitTemplate with Message Converter
     @Bean
     public RabbitTemplate rabbitTemplate(ConnectionFactory connectionFactory) {
         RabbitTemplate rabbitTemplate = new RabbitTemplate(connectionFactory);

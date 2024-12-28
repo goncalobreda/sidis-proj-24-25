@@ -150,12 +150,12 @@ class BookController {
                 .contentType(MediaType.parseMediaType(bookImage.getContentType()))
                 .body(bookImage.getImage());
     }
-/*
+
     @Operation(summary = "Get top 5 books by number of lendings")
     @GetMapping("/top5Books")
     public List<BookCountDTO> getTop5Books() {
         return bookService.findTop5Books();
-    }*/
+    }
 }
 
 

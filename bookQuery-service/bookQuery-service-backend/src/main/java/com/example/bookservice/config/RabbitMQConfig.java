@@ -1,49 +1,63 @@
 package com.example.bookservice.config;
 
-
-import org.springframework.amqp.core.Binding;
-import org.springframework.amqp.core.BindingBuilder;
-import org.springframework.amqp.core.Queue;
-import org.springframework.amqp.core.TopicExchange;
+import org.springframework.amqp.core.*;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
-import org.springframework.amqp.support.converter.Jackson2JsonMessageConverter;
+import org.springframework.amqp.rabbit.config.SimpleRabbitListenerContainerFactory;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 @Configuration
 public class RabbitMQConfig {
 
-    public static final String BOOK_COMMAND_EXCHANGE = "book-command-exchange";
-    public static final String BOOK_EVENT_QUEUE = "book-event-queue";
-    public static final String BOOK_ROUTING_KEY = "book.sync.event";
+    @Value("${rabbitmq.queue.book.sync}")
+    private String bookSyncQueueName;
+
+    @Value("${rabbitmq.partial.update.queue.name}")
+    private String partialUpdateQueueName;
+
+    @Value("${rabbitmq.exchange.book.command}")
+    private String bookCommandExchange;
 
     @Bean
-    public Queue bookEventQueue() {
-        return new Queue(BOOK_EVENT_QUEUE, true);
+    public Queue bookSyncQueue() {
+        return new Queue(bookSyncQueueName, true);
+    }
+
+    @Bean
+    public Queue partialUpdateQueue() {
+        return new Queue(partialUpdateQueueName, true);
     }
 
     @Bean
     public TopicExchange bookCommandExchange() {
-        return new TopicExchange(BOOK_COMMAND_EXCHANGE);
+        return new TopicExchange(bookCommandExchange);
     }
 
     @Bean
-    public Binding bookEventQueueBinding(Queue bookEventQueue, TopicExchange bookCommandExchange) {
-        return BindingBuilder.bind(bookEventQueue).to(bookCommandExchange).with(BOOK_ROUTING_KEY);
+    public Binding querySyncBinding(@Qualifier("bookSyncQueue") Queue bookSyncQueue, TopicExchange bookCommandExchange) {
+        return BindingBuilder.bind(bookSyncQueue).to(bookCommandExchange).with("book.sync.query.book1");
     }
 
     @Bean
-    public Jackson2JsonMessageConverter messageConverter() {
-        return new Jackson2JsonMessageConverter();
+    public Binding partialUpdateBinding(@Qualifier("partialUpdateQueue") Queue partialUpdateQueue, TopicExchange bookCommandExchange) {
+        return BindingBuilder.bind(partialUpdateQueue).to(bookCommandExchange).with("book.partial.update.#");
     }
+
 
     @Bean
     public RabbitTemplate rabbitTemplate(ConnectionFactory connectionFactory) {
-        RabbitTemplate rabbitTemplate = new RabbitTemplate(connectionFactory);
-        rabbitTemplate.setMessageConverter(messageConverter());
-        return rabbitTemplate;
+        return new RabbitTemplate(connectionFactory);
+    }
+
+    @Bean
+    public SimpleRabbitListenerContainerFactory rabbitListenerContainerFactory(ConnectionFactory connectionFactory) {
+        SimpleRabbitListenerContainerFactory factory = new SimpleRabbitListenerContainerFactory();
+        factory.setConnectionFactory(connectionFactory);
+        factory.setConcurrentConsumers(3);
+        factory.setMaxConcurrentConsumers(10);
+        return factory;
     }
 }
-
-

@@ -42,4 +42,14 @@ public interface SpringDataBookRepository extends BookRepository, CrudRepository
     List<Book> findByAuthorId(@Param("authorID") String authorID);
 
 
+    @Query(value = """
+            SELECT b.BOOK_ID AS bookID, b.TITLE AS title, COUNT(l.pk) AS lendingCount
+            FROM Book b
+            JOIN Lending l ON b.BOOK_ID = l.BOOK_ID
+            GROUP BY b.BOOK_ID, b.TITLE
+            ORDER BY lendingCount DESC
+            LIMIT 5
+        """, nativeQuery = true)
+    List<Object[]> findTop5BooksNative();
+
 }

@@ -28,4 +28,6 @@ public interface BookRepository {
 
     Book save(Book book);
 
+    List<Object[]> findTop5BooksNative();
+
 }
