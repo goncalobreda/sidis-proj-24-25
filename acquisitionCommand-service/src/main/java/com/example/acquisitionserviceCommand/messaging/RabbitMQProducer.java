@@ -45,4 +45,19 @@ public class RabbitMQProducer {
             logger.error("Erro ao enviar evento de sincronização: {}", e.getMessage());
         }
     }
+
+    public <T> void sendStatusSyncMessage(T message) {
+        try {
+            String routingKey = "acquisition.status.sync"; // Routing key genérica para todas as queues de status
+            rabbitTemplate.convertAndSend(
+                    RabbitMQConfig.ACQUISITION_EXCHANGE_NAME,
+                    routingKey,
+                    message
+            );
+            logger.info("Mensagem de status enviada para o Exchange '{}' com routingKey '{}': {}",
+                    RabbitMQConfig.ACQUISITION_EXCHANGE_NAME, routingKey, message);
+        } catch (Exception e) {
+            logger.error("Erro ao enviar mensagem de status para RabbitMQ: {}", e.getMessage(), e);
+        }
+    }
 }

@@ -12,4 +12,7 @@ public interface AcquisitionService {
     List<Acquisition> findPendingAcquisitions();
 
     void syncAcquisitionFromConsumer(AcquisitionSyncDTO syncDTO);
+
+    void updateAcquisitionStatusFromConsumer(AcquisitionSyncDTO syncDTO);
+
 }

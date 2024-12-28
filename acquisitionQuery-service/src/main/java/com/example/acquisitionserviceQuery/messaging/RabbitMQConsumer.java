@@ -33,4 +33,16 @@ public class RabbitMQConsumer {
             logger.error("Erro ao processar mensagem de sincronização no Query: {}", e.getMessage(), e);
         }
     }
+
+    @RabbitListener(queues = "${rabbitmq.status.sync.queue.name}")
+    public void processStatusSyncMessage(AcquisitionSyncDTO syncDTO) {
+        logger.info("Mensagem recebida para sincronização de status no Query: {}", syncDTO);
+
+        try {
+            acquisitionService.updateAcquisitionStatusFromConsumer(syncDTO);
+            logger.info("Status sincronizado com sucesso para aquisição no Query: {}", syncDTO.getAcquisitionId());
+        } catch (Exception e) {
+            logger.error("Erro ao processar mensagem de sincronização de status no Query: {}", e.getMessage(), e);
+        }
+    }
 }

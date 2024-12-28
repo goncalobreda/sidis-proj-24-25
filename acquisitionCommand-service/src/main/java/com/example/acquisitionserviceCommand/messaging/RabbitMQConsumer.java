@@ -59,5 +59,24 @@ public class RabbitMQConsumer {
         }
     }
 
+    @RabbitListener(queues = "${rabbitmq.status.sync.queue.name}")
+    public void processStatusSyncMessage(AcquisitionSyncDTO syncDTO) {
+        logger.info("Mensagem recebida para sincronização de status: {}", syncDTO);
+
+        // Ignorar mensagens originadas da mesma instância
+        if (instanceId.equals(syncDTO.getOriginInstanceId())) {
+            logger.info("Mensagem ignorada. Originada da própria instância: {}", instanceId);
+            return;
+        }
+
+        try {
+            logger.info("Processando sincronização de status para aquisição: {}", syncDTO.getAcquisitionId());
+            acquisitionService.updateAcquisitionStatus(syncDTO.getAcquisitionId(), syncDTO.getStatus());
+            logger.info("Sincronização de status aplicada com sucesso para a aquisição: {}", syncDTO.getAcquisitionId());
+        } catch (Exception e) {
+            logger.error("Erro ao processar mensagem de sincronização de status: {}", e.getMessage(), e);
+        }
+    }
+
 
 }

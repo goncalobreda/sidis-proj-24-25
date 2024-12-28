@@ -17,6 +17,9 @@ public class RabbitMQConfig {
     @Value("${rabbitmq.command.queue.name}")
     private String commandQueueName;
 
+    @Value("${rabbitmq.status.sync.queue.name}")
+    private String statusSyncQueueName;
+
     public static final String BOOK_COMMAND_EXCHANGE = "book-command-exchange";
     public static final String BOOK_ROUTING_KEY = "book.sync.event";
 
@@ -37,6 +40,11 @@ public class RabbitMQConfig {
     }
 
     @Bean
+    public Queue statusSyncQueue() {
+        return new Queue(statusSyncQueueName, true); // Durable
+    }
+
+    @Bean
     public TopicExchange authExchange() {
         return new TopicExchange(EXCHANGE_NAME);
     }
@@ -54,6 +62,11 @@ public class RabbitMQConfig {
     @Bean
     public Binding acquisitionQueueBinding(Queue acquisitionQueue, TopicExchange authExchange) {
         return BindingBuilder.bind(acquisitionQueue).to(authExchange).with(ROUTING_KEY);
+    }
+
+    @Bean
+    public Binding statusSyncQueueBinding(Queue statusSyncQueue, TopicExchange acquisitionExchange) {
+        return BindingBuilder.bind(statusSyncQueue).to(acquisitionExchange).with("acquisition.status.sync");
     }
 
     @Bean

@@ -53,4 +53,23 @@ public class AcquisitionServiceImpl implements AcquisitionService {
                 }
         );
     }
+
+    public void updateAcquisitionStatusFromConsumer(AcquisitionSyncDTO syncDTO) {
+        acquisitionRepository.findById(syncDTO.getAcquisitionId()).ifPresentOrElse(
+                existingAcquisition -> {
+                    AcquisitionStatus newStatus = AcquisitionStatus.valueOf(syncDTO.getStatus());
+                    if (!existingAcquisition.getStatus().equals(newStatus)) {
+                        existingAcquisition.setStatus(newStatus);
+                        acquisitionRepository.save(existingAcquisition);
+                        logger.info("Status da aquisição atualizado no Query: {} -> {}", syncDTO.getAcquisitionId(), syncDTO.getStatus());
+                    } else {
+                        logger.info("Status já sincronizado para a aquisição no Query: {}", syncDTO.getAcquisitionId());
+                    }
+                },
+                () -> {
+                    logger.warn("Aquisição não encontrada no Query para sincronização de status: {}", syncDTO.getAcquisitionId());
+                }
+        );
+    }
+
 }

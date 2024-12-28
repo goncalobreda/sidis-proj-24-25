@@ -69,6 +69,7 @@ public class AcquisitionServiceImpl implements AcquisitionService {
         acquisition.setStatus(AcquisitionStatus.APPROVED);
         Acquisition approvedAcquisition = acquisitionRepository.save(acquisition);
 
+        sendSyncStatus(approvedAcquisition);
         sendBookCreationEvent(approvedAcquisition);
 
         return approvedAcquisition;
@@ -85,8 +86,7 @@ public class AcquisitionServiceImpl implements AcquisitionService {
 
         Acquisition rejectedAcquisition = acquisitionRepository.save(acquisition);
 
-        sendSyncEvent(rejectedAcquisition);
-
+        sendSyncStatus(rejectedAcquisition);
         return rejectedAcquisition;
     }
 
@@ -119,6 +119,43 @@ public class AcquisitionServiceImpl implements AcquisitionService {
         rabbitMQProducer.sendMessage("acquisition.sync", syncDTO);
         logger.info("Evento de sincronização de aquisição enviado: {}", syncDTO);
     }
+
+    private void sendSyncStatus(Acquisition acquisition) {
+        AcquisitionSyncDTO syncDTO = new AcquisitionSyncDTO(
+                acquisition.getAcquisitionID(),
+                acquisition.getStatus().name(),
+                instanceId,
+                acquisition.getReaderID(),
+                acquisition.getIsbn(),
+                acquisition.getTitle(),
+                acquisition.getDescription(),
+                acquisition.getReason(),
+                acquisition.getAuthorIds(),
+                acquisition.getGenre()
+        );
+
+        rabbitMQProducer.sendStatusSyncMessage(syncDTO);
+        logger.info("Evento de sincronização de status enviado: {}", syncDTO);
+    }
+
+
+    public void updateAcquisitionStatus(String acquisitionId, String status) {
+        Acquisition acquisition = acquisitionRepository.findById(acquisitionId)
+                .orElseThrow(() -> new IllegalArgumentException("Aquisição não encontrada com o ID: " + acquisitionId));
+
+        AcquisitionStatus acquisitionStatus = AcquisitionStatus.valueOf(status);
+
+        if (!acquisition.getStatus().equals(acquisitionStatus)) {
+            acquisition.setStatus(acquisitionStatus);
+            acquisitionRepository.save(acquisition);
+            logger.info("Status atualizado para aquisição: {} -> {}", acquisitionId, status);
+        } else {
+            logger.info("Aquisição já está sincronizada com o status: {}", status);
+        }
+    }
+
+
+
 
     public Reader createFromUserSyncDTO(UserSyncDTO userSyncDTO) {
         logger.info("Criando Reader a partir de UserSyncDTO: {}", userSyncDTO);
@@ -175,9 +212,26 @@ public class AcquisitionServiceImpl implements AcquisitionService {
         if (!acquisition.getStatus().equals(acquisitionStatus)) {
             acquisition.setStatus(acquisitionStatus);
             acquisitionRepository.save(acquisition);
-            logger.info("Status atualizado para aquisição: {} -> {}", acquisitionId, status);
+            logger.info("Status atualizado para aprovação: {} -> {}", acquisitionId, status);
         } else {
             logger.info("Aquisição já está sincronizada com o status: {}", status);
         }
     }
+
+    public void rejectAcquisitionFromConsumer(String acquisitionId, String status) {
+        Acquisition acquisition = acquisitionRepository.findById(acquisitionId)
+                .orElseThrow(() -> new IllegalArgumentException("Aquisição não encontrada com o ID: " + acquisitionId));
+
+        AcquisitionStatus acquisitionStatus = AcquisitionStatus.valueOf(status);
+
+        if (!acquisition.getStatus().equals(acquisitionStatus)) {
+            acquisition.setStatus(acquisitionStatus);
+            acquisitionRepository.save(acquisition);
+            logger.info("Status atualizado para rejeição: {} -> {}", acquisitionId, status);
+        } else {
+            logger.info("Aquisição já está sincronizada com o status: {}", status);
+        }
+    }
+
+
 }
