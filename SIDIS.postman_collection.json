@@ -4,7 +4,7 @@
 		"name": "SIDIS",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
 		"_exporter_id": "34693122",
-		"_collection_link": "https://libraryapp-api-docs.postman.co/workspace/LibraryApp-API-Docs-Workspace~fa6dfa2f-53bb-4ba6-bc61-e44e2d812029/collection/30715330-c6bfa44b-7e9f-44f1-86d7-551e8bec2cbc?action=share&source=collection_link&creator=34693122"
+		"_collection_link": "https://libraryapp-api-docs.postman.co/workspace/fa6dfa2f-53bb-4ba6-bc61-e44e2d812029/collection/30715330-c6bfa44b-7e9f-44f1-86d7-551e8bec2cbc?action=share&source=collection_link&creator=34693122"
 	},
 	"item": [
 		{
@@ -12,6 +12,18 @@
 			"item": [
 				{
 					"name": "Register a new Reader",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
 					"request": {
 						"auth": {
 							"type": "noauth"
@@ -20,7 +32,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"email\": \"testuser@example.com\",\n  \"fullName\": \"João Silva\",\n  \"password\": \"password123\",\n  \"rePassword\": \"password123\",\n  \"birthdate\": \"1990-01-01\",\n  \"interests\": [\n    \"string\"\n  ],\n  \"phoneNumber\": \"912345678\",\n  \"gdpr\": true\n}",
+							"raw": "{\n  \"email\": \"testuser12@example.com\",\n  \"fullName\": \"João Silva\",\n  \"password\": \"password123\",\n  \"rePassword\": \"password123\",\n  \"birthdate\": \"1990-01-01\",\n  \"interests\": [\n    \"string\"\n  ],\n  \"phoneNumber\": \"912345678\",\n  \"gdpr\": true\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -49,7 +61,7 @@
 			"name": "AuthQuery",
 			"item": [
 				{
-					"name": "Login as Reader 2024/5",
+					"name": "Login reader",
 					"request": {
 						"auth": {
 							"type": "noauth"
@@ -58,7 +70,37 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"username\": \"francisco77@mail.com\",\n  \"password\": \"Password5\"\n}",
+							"raw": "{\n  \"username\": \"testuser12@example.com\",\n  \"password\": \"password123\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:8082/api/public/login",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8082",
+							"path": [
+								"api",
+								"public",
+								"login"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "login librarian",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"username\": \"librarian1@mail.com\",\n  \"password\": \"pass1\"\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -318,7 +360,7 @@
 							"bearer": [
 								{
 									"key": "token",
-									"value": "eyJhbGciOiJSUzI1NiJ9.eyJpc3MiOiJleGFtcGxlLmlvIiwic3ViIjoiMTQsZnJhbmNpc2NvNzdAbWFpbC5jb20iLCJleHAiOjE3MzA5MjY0MTEsImlhdCI6MTczMDg5MDQxMSwicm9sZXMiOiJSRUFERVIifQ.dAuqdUDzEz-qVRu7rWCJUTp_Jz4uU7hc7Dn9G0Mi3Qi2vZChThnyuVmGU5fBlAlLE2KjNpcjrSf-ZiooWQNpNpYYq31yen_w3oCS9cXkRXxeKZDHBdnavDq-tZjyGf2fUgP4fxmOkjfYsuQKLilIkHilUQcakr0A2q23AWEj8lDGKG6jz0cSF_-Xfh3I-8vBwjabgW2qj8R0JIx1AjUAUw4IfIHQnrp5ecWDI7UqjlGTtGS7B4fqkYSrzwblm27CiKCpjQSAdV6Qz9LY3aWN9bK3n3vb34UROzsyHqhLBcxakr_NyStpwZAurht9XK-NN4QnKc-lz7VzeHu7jsvJIg",
+									"value": "eyJhbGciOiJSUzI1NiJ9.eyJpc3MiOiJleGFtcGxlLmlvIiwic3ViIjoidGVzdHVzZXIxMkBleGFtcGxlLmNvbSIsImV4cCI6MTczNDc4OTczOCwiaWF0IjoxNzM0NzUzNzM4LCJlbWFpbCI6InRlc3R1c2VyMTJAZXhhbXBsZS5jb20iLCJyb2xlcyI6IlJFQURFUiJ9.PEQf8vT_6RiUbshLYB3KwG7jii12Xcae_3RfPqo2IJp4KECsZSBB7auJrY4Grvm4aSYERzC_QCibUFRgBZUKhHx1esja1T7c-zEMwgPVjeNN1YzDVBFmGknFAt0C8I3K2hUaQZcR_M8jbBeH0TuSUU1o6-KgQZHKIhMsFeuWlMRTmfXhs8hyDqQYiCm_B1q_DdGQKTQATBECHtkntgAGdmFq6B_E2WBRGzgkS-1H8WtbiIcY0Xge6c2SX74qvAHqLSr9oO-WU0PRpdhYGVl9ZuP7OJjB-VivOUGiqxrWnZaHPXNX0qJPxRJvR-kXXzQ6fgm8trYI9Hy1TBQ7R67A6Q",
 									"type": "string"
 								}
 							]
@@ -333,7 +375,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"phoneNumber\": \"730651154\",\n  \"interests\": [\n    \"Terror\", \"xxx\", \"Romance\", \"Terror\", \"Drama\"\n  ],\n  \"gdpr\": true\n}",
+							"raw": "{\n  \"phoneNumber\": \"123456781\"\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -341,7 +383,7 @@
 							}
 						},
 						"url": {
-							"raw": "http://localhost:8092/api/readers/2024/5",
+							"raw": "http://localhost:8092/api/readers/2024/21/update",
 							"protocol": "http",
 							"host": [
 								"localhost"
@@ -351,7 +393,8 @@
 								"api",
 								"readers",
 								"2024",
-								"5"
+								"21",
+								"update"
 							]
 						}
 					},
@@ -457,12 +500,19 @@
 					"name": "Gets the top 5 Readers by lendings",
 					"request": {
 						"auth": {
-							"type": "noauth"
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "eyJhbGciOiJSUzI1NiJ9.eyJpc3MiOiJleGFtcGxlLmlvIiwic3ViIjoibGlicmFyaWFuMUBtYWlsLmNvbSIsImV4cCI6MTczNDkxODgzOSwiaWF0IjoxNzM0ODgyODM5LCJlbWFpbCI6ImxpYnJhcmlhbjFAbWFpbC5jb20iLCJyb2xlcyI6IkxJQlJBUklBTiJ9.WCAWYqBSIPZ51yRdBRQ3bH2c9VZOQZE2nSzwyE7iSpXGpxKza1NHPI2-63-uXnmalPwBuHGMo3BLjWj2SKT47shweHyEOXTChWbjUmF4bKLir50gJk71hEdwFwXkr4XT_Oi-qK1dAZW8mjTS15Tk0AwpRsWvzn7Ly-IMUGbeMvZQTqxR37GyXQGtat15ZyBhN__Gy6fnGqYmshA_j9GGII7YOoTQJM8ZT54Iwmi5UbsjL6F8Ax2f4EWRHox5pNe3KCqdSfVb2IPtqlLKHfw3iHBb8GNyXXXuOJAp6_2fSNCvfZMpMS0PtwodvwOGu6Iqov8d-cLU2nV8FgK5djKciQ",
+									"type": "string"
+								}
+							]
 						},
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "http://localhost:8094/api/readers/top5",
+							"raw": "http://localhost:8094/api/readers/top5Readers",
 							"protocol": "http",
 							"host": [
 								"localhost"
@@ -471,7 +521,7 @@
 							"path": [
 								"api",
 								"readers",
-								"top5"
+								"top5Readers"
 							]
 						}
 					},
@@ -793,6 +843,158 @@
 							"response": []
 						}
 					]
+				}
+			]
+		},
+		{
+			"name": "AcquisitionCom",
+			"item": [
+				{
+					"name": "Suggest Acquisition",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"readerID\": \"string\",\n  \"isbn\": \"stringstri\",\n  \"title\": \"string\",\n  \"description\": \"string\",\n  \"reason\": \"string\",\n  \"authorIds\": [\n    \"string\"\n  ],\n  \"genre\": \"string\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:8096/api/acquisitions",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8096",
+							"path": [
+								"api",
+								"acquisitions"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "rejeitar",
+					"request": {
+						"method": "PATCH",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8096/api/acquisitions/2024/3/reject?reason=nao quero",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8096",
+							"path": [
+								"api",
+								"acquisitions",
+								"2024",
+								"3",
+								"reject"
+							],
+							"query": [
+								{
+									"key": "reason",
+									"value": "nao quero"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "aprovar",
+					"request": {
+						"method": "PATCH",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8096/api/acquisitions/2024/3/approve",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8096",
+							"path": [
+								"api",
+								"acquisitions",
+								"2024",
+								"3",
+								"approve"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "AcquisitionQuery",
+			"item": [
+				{
+					"name": "get acquisitions",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "eyJhbGciOiJSUzI1NiJ9.eyJpc3MiOiJleGFtcGxlLmlvIiwic3ViIjoibGlicmFyaWFuMUBtYWlsLmNvbSIsImV4cCI6MTczNTQzOTY2NSwiaWF0IjoxNzM1NDAzNjY1LCJlbWFpbCI6ImxpYnJhcmlhbjFAbWFpbC5jb20iLCJyb2xlcyI6IkxJQlJBUklBTiJ9.QjCFYOdcyLD8DboXFofvIeU_iGpR7fjHySVOBTF05iXDBb9e1Hk6dL0PwI4SSgqzoxPQX5xv_2W2VX4IXQmG4-j959qUjUxw9TYXw8vk_E8Ed_DWupFN28mEimyNii2BpLhGNnRmS_XxUxkSu9wfJ1z30yAY0vlehz0SUnt6jcFp6dPXT3IS4aZ7JptIeCd25i2lwcLbIgb5ovFFiySXwRlMy24WcpXB0no9cyY3H_KyHHTl20qbMkzA4SOr7wzSBYeZwWzbSMAoXoq1eL98oRCq2BOFVWezgfUaM6wgP0X-xGGJtZzdPH_wQpVl7pix7Jl_E8uuO2jMU2RP0EFOEA",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8098/api/acquisitions",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8098",
+							"path": [
+								"api",
+								"acquisitions"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "get pending acquisitions",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "eyJhbGciOiJSUzI1NiJ9.eyJpc3MiOiJleGFtcGxlLmlvIiwic3ViIjoibGlicmFyaWFuMUBtYWlsLmNvbSIsImV4cCI6MTczNTQzOTY2NSwiaWF0IjoxNzM1NDAzNjY1LCJlbWFpbCI6ImxpYnJhcmlhbjFAbWFpbC5jb20iLCJyb2xlcyI6IkxJQlJBUklBTiJ9.QjCFYOdcyLD8DboXFofvIeU_iGpR7fjHySVOBTF05iXDBb9e1Hk6dL0PwI4SSgqzoxPQX5xv_2W2VX4IXQmG4-j959qUjUxw9TYXw8vk_E8Ed_DWupFN28mEimyNii2BpLhGNnRmS_XxUxkSu9wfJ1z30yAY0vlehz0SUnt6jcFp6dPXT3IS4aZ7JptIeCd25i2lwcLbIgb5ovFFiySXwRlMy24WcpXB0no9cyY3H_KyHHTl20qbMkzA4SOr7wzSBYeZwWzbSMAoXoq1eL98oRCq2BOFVWezgfUaM6wgP0X-xGGJtZzdPH_wQpVl7pix7Jl_E8uuO2jMU2RP0EFOEA",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8098/api/acquisitions/pending",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8098",
+							"path": [
+								"api",
+								"acquisitions",
+								"pending"
+							]
+						}
+					},
+					"response": []
 				}
 			]
 		}

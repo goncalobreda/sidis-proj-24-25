@@ -95,10 +95,9 @@ public class SecurityConfig {
 
 
                 // Our public endpoints
-                .requestMatchers("/api/acquisitions").permitAll()
-                .requestMatchers("/api/acquisitions/{id}").permitAll()
-                .requestMatchers("/api/acquisitions/{id1}/{id2}/approve").permitAll()
-                .requestMatchers("/api/acquisitions/{id1}/{id2}/reject").permitAll()
+                .requestMatchers("/api/acquisitions").hasRole(Role.READER)
+                .requestMatchers("/api/acquisitions/{id1}/{id2}/approve").hasRole(Role.LIBRARIAN)
+                .requestMatchers("/api/acquisitions/{id1}/{id2}/reject").hasRole(Role.LIBRARIAN)
 
 
                 // Our private endpoints

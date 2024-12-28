@@ -1,5 +1,6 @@
 package com.example.acquisitionserviceQuery.configuration;
 
+import com.example.acquisitionserviceQuery.model.Role;
 import com.nimbusds.jose.jwk.JWK;
 import com.nimbusds.jose.jwk.JWKSet;
 import com.nimbusds.jose.jwk.RSAKey;
@@ -87,8 +88,8 @@ public class SecurityConfig {
 
 
                 // Our public endpoints
-                .requestMatchers("/api/acquisitions").permitAll()
-                .requestMatchers("/api/acquisitions/pending").permitAll()
+                .requestMatchers("/api/acquisitions").hasRole(Role.LIBRARIAN)
+                .requestMatchers("/api/acquisitions/pending").hasRole(Role.LIBRARIAN)
 
 
                 // Our private endpoints
