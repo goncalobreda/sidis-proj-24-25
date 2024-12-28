@@ -131,7 +131,7 @@ public class ReaderServiceImpl implements ReaderService {
 
         Reader updatedReader = readerRepository.save(reader);
 
-        logger.info("Partial update aplicado (SEM republicação) para o Reader: {}", readerID);
+        logger.info("Partial update aplicado para o Reader: {}", readerID);
 
         return updatedReader;
     }

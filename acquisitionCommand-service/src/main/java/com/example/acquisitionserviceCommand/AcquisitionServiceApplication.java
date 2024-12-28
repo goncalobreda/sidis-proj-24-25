@@ -1,13 +1,13 @@
-package com.example.acquisitionqueryservice;
+package com.example.acquisitionserviceCommand;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 @SpringBootApplication
-public class AcquisitionQueryServiceApplication {
+public class AcquisitionServiceApplication {
 
 	public static void main(String[] args) {
-		SpringApplication.run(AcquisitionQueryServiceApplication.class, args);
+		SpringApplication.run(AcquisitionServiceApplication.class, args);
 	}
 
 }

@@ -37,6 +37,8 @@
         <module>readerQuery-service</module>
         <module>authCommand-service</module>
         <module>authQuery-service</module>
+        <module>acquisitionCommand-service</module>
+        <module>acquisitionQuery-service</module>
     </modules> <!-- Adição dos módulos -->
 
     <dependencyManagement>
