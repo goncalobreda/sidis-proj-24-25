@@ -1,11 +1,8 @@
 package com.example.acquisitionserviceCommand.service;
 
-import com.example.acquisitionserviceCommand.dto.AcquisitionSyncDTO;
-import com.example.acquisitionserviceCommand.dto.BookSyncDTO;
-import com.example.acquisitionserviceCommand.dto.CreateAcquisitionDTO;
+import com.example.acquisitionserviceCommand.dto.*;
 import com.example.acquisitionserviceCommand.messaging.RabbitMQProducer;
 import com.example.acquisitionserviceCommand.model.Acquisition;
-import com.example.acquisitionserviceCommand.dto.UserSyncDTO;
 import com.example.acquisitionserviceCommand.model.AcquisitionStatus;
 import com.example.acquisitionserviceCommand.model.Reader;
 import com.example.acquisitionserviceCommand.repositories.AcquisitionRepository;
@@ -95,12 +92,14 @@ public class AcquisitionServiceImpl implements AcquisitionService {
                 acquisition.getIsbn(),
                 acquisition.getTitle(),
                 acquisition.getGenre(),
-                acquisition.getDescription()
+                acquisition.getDescription(),
+                acquisition.getAuthorIds().stream().map(authorId -> new AuthorDTO(authorId, null, null, null)).toList()
         );
 
         rabbitMQProducer.sendBookSyncEvent(bookSyncDTO);
         logger.info("Evento de sincronização de livro enviado para o RabbitMQ: {}", bookSyncDTO);
     }
+
 
     private void sendSyncEvent(Acquisition acquisition) {
         AcquisitionSyncDTO syncDTO = new AcquisitionSyncDTO(

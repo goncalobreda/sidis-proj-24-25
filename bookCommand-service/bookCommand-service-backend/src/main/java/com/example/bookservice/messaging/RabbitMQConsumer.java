@@ -46,4 +46,30 @@ public class RabbitMQConsumer {
             logger.error("Erro ao sincronizar autor: {}", e.getMessage(), e);
         }
     }
+
+    @RabbitListener(queues = "${rabbitmq.queue.acquisition.approve}")
+    public void processAcquisitionApproveEvent(BookSyncDTO bookSyncDTO) {
+        logger.info("Mensagem de aprovação recebida no Book Service: {}", bookSyncDTO);
+
+        try {
+            bookService.createBookFromAcquisition(bookSyncDTO);
+            logger.info("Livro criado com sucesso a partir da aquisição aprovada: {}", bookSyncDTO.getIsbn());
+        } catch (Exception e) {
+            logger.error("Erro ao processar mensagem de aprovação de aquisição: {}", e.getMessage());
+        }
+    }
+
+
+    @RabbitListener(queues = "${rabbitmq.queue.acquisition.reject}")
+    public void processAcquisitionRejectEvent(BookSyncDTO bookSyncDTO) {
+        logger.info("Mensagem de rejeição recebida no Book Service: {}", bookSyncDTO);
+
+        try {
+            bookService.handleRejectedAcquisition(bookSyncDTO);
+            logger.info("Mensagem de rejeição processada com sucesso para aquisição: {}", bookSyncDTO.getIsbn());
+        } catch (Exception e) {
+            logger.error("Erro ao processar mensagem de rejeição de aquisição: {}", e.getMessage(), e);
+        }
+    }
+
 }

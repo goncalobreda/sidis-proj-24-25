@@ -213,4 +213,59 @@ public class BookServiceImpl implements BookService {
     }
 
 
+    @Override
+    public void createBookFromAcquisition(BookSyncDTO bookSyncDTO) {
+        logger.info("Criando livro a partir da aquisição aprovada com ISBN: {}", bookSyncDTO.getIsbn());
+
+        // Validar se o gênero está presente
+        if (bookSyncDTO.getGenre() == null || bookSyncDTO.getGenre().isBlank()) {
+            throw new IllegalArgumentException("Genre must not be null, nor blank");
+        }
+
+        // Criar o livro a partir da aquisição
+        Book book = new Book();
+        book.setIsbn(bookSyncDTO.getIsbn());
+        book.setTitle(bookSyncDTO.getTitle());
+        book.setDescription(bookSyncDTO.getDescription());
+
+        // Buscar ou criar o gênero
+        Genre genre = genreRepository.findByInterest(bookSyncDTO.getGenre());
+        if (genre == null) {
+            genre = new Genre();
+            genre.setInterest(bookSyncDTO.getGenre());
+            genre = genreRepository.save(genre);
+            logger.info("Novo gênero criado: {}", genre.getInterest());
+        }
+        book.setGenre(genre);
+
+        // Processar autores, se existirem
+        if (bookSyncDTO.getAuthors() != null) {
+            List<Author> authors = bookSyncDTO.getAuthors().stream()
+                    .map(authorDTO -> authorRepository.findByAuthorID(authorDTO.getAuthorID())
+                            .orElseGet(() -> {
+                                Author newAuthor = new Author();
+                                newAuthor.setAuthorID(authorDTO.getAuthorID());
+                                newAuthor.setName(authorDTO.getName());
+                                newAuthor.setBiography(authorDTO.getBiography());
+                                return authorRepository.save(newAuthor);
+                            }))
+                    .collect(Collectors.toList());
+            book.setAuthor(authors);
+        } else {
+            logger.warn("Nenhum autor associado ao livro com ISBN: {}", bookSyncDTO.getIsbn());
+        }
+
+        // Salvar o livro no banco de dados
+        bookRepository.save(book);
+        logger.info("Livro criado com sucesso a partir da aquisição aprovada: {}", book.getIsbn());
+    }
+
+
+    @Override
+    public void handleRejectedAcquisition(BookSyncDTO bookSyncDTO) {
+        logger.info("Processando rejeição de aquisição com ISBN: {}", bookSyncDTO.getIsbn());
+
+        logger.info("Aquisição rejeitada foi processada: {}", bookSyncDTO.getIsbn());
+    }
+
 }

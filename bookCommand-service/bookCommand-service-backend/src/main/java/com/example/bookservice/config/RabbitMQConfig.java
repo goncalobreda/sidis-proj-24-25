@@ -27,6 +27,21 @@ public class RabbitMQConfig {
     @Value("${rabbitmq.exchange.name}")
     private String bookCommandExchange;
 
+    @Value("${rabbitmq.exchange.acquisition}")
+    private String acquisitionExchangeName;
+
+    @Value("${rabbitmq.queue.acquisition.approve}")
+    private String acquisitionApproveQueue;
+
+    @Value("${rabbitmq.queue.acquisition.reject}")
+    private String acquisitionRejectQueue;
+
+
+    @Bean
+    public TopicExchange acquisitionExchange() {
+        return new TopicExchange(acquisitionExchangeName);
+    }
+
     @Bean
     public TopicExchange bookCommandExchange() {
         return new TopicExchange(bookCommandExchange);
@@ -57,6 +72,16 @@ public class RabbitMQConfig {
     }
 
 
+    @Bean
+    public Queue acquisitionApproveQueue() {
+        return new Queue(acquisitionApproveQueue, true);
+    }
+
+    @Bean
+    public Queue acquisitionRejectQueue() {
+        return new Queue(acquisitionRejectQueue, true);
+    }
+
 
     // Bindings
     @Bean
@@ -84,6 +109,17 @@ public class RabbitMQConfig {
     @Bean
     public Binding authorSyncBinding(Queue authorSyncQueue, TopicExchange bookCommandExchange) {
         return BindingBuilder.bind(authorSyncQueue).to(bookCommandExchange).with("author.sync.#");
+    }
+
+    @Bean
+    public Binding acquisitionApproveBinding(Queue acquisitionApproveQueue, TopicExchange acquisitionExchange) {
+        return BindingBuilder.bind(acquisitionApproveQueue).to(acquisitionExchange).with("acquisition.approve.#");
+    }
+
+
+    @Bean
+    public Binding acquisitionRejectBinding(Queue acquisitionRejectQueue, TopicExchange acquisitionExchange) {
+        return BindingBuilder.bind(acquisitionRejectQueue).to(acquisitionExchange).with("acquisition.reject.#");
     }
 
     // Message Converter

@@ -26,4 +26,8 @@ public interface BookService {
 
     Book partialUpdate(Long bookID, EditBookRequest request, long desiredVersion);
 
+    void createBookFromAcquisition(BookSyncDTO bookSyncDTO);
+
+    void handleRejectedAcquisition(BookSyncDTO bookSyncDTO);
+
 }

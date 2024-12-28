@@ -35,16 +35,18 @@ public class RabbitMQProducer {
 
     public void sendBookSyncEvent(BookSyncDTO bookSyncDTO) {
         try {
+            String routingKey = "acquisition.approve." + instanceId;
             rabbitTemplate.convertAndSend(
-                    RabbitMQConfig.BOOK_COMMAND_EXCHANGE,
-                    RabbitMQConfig.BOOK_ROUTING_KEY,
+                    RabbitMQConfig.ACQUISITION_EXCHANGE_NAME,
+                    routingKey,
                     bookSyncDTO
             );
-            logger.info("Evento de sincronização de livro enviado: {}", bookSyncDTO);
+            logger.info("Evento de sincronização de livro enviado para aprovação: {}", bookSyncDTO);
         } catch (Exception e) {
-            logger.error("Erro ao enviar evento de sincronização: {}", e.getMessage());
+            logger.error("Erro ao enviar evento de aprovação: {}", e.getMessage());
         }
     }
+
 
     public <T> void sendStatusSyncMessage(T message) {
         try {
