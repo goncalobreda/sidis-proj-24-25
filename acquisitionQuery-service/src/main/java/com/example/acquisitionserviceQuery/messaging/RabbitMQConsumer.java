@@ -1,6 +1,7 @@
 package com.example.acquisitionserviceQuery.messaging;
 
 import com.example.acquisitionserviceQuery.dto.AcquisitionSyncDTO;
+import com.example.acquisitionserviceQuery.dto.BookCreationResponseDTO;
 import com.example.acquisitionserviceQuery.service.AcquisitionService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -43,6 +44,20 @@ public class RabbitMQConsumer {
             logger.info("Status sincronizado com sucesso para aquisição no Query: {}", syncDTO.getAcquisitionId());
         } catch (Exception e) {
             logger.error("Erro ao processar mensagem de sincronização de status no Query: {}", e.getMessage(), e);
+        }
+    }
+
+    @RabbitListener(queues = "${rabbitmq.queue.query.book.result:acquisition.query.book.creation.result.queue}")
+    public void handleBookCreationResult(BookCreationResponseDTO response) {
+        logger.info("Recebida BookCreationResponseDTO no Query: {}", response);
+
+        try {
+            acquisitionService.updateBookCreationStatus(response.getIsbn(), response.isSuccess(), response.getErrorReason());
+            logger.info("Aquisição (Query) com ISBN={} atualizada para {}",
+                    response.getIsbn(),
+                    (response.isSuccess() ? "APPROVED" : "REJECTED"));
+        } catch (Exception e) {
+            logger.error("Erro ao atualizar Acquisition (Query) a partir do BookCreationResponseDTO: {}", e.getMessage(), e);
         }
     }
 }

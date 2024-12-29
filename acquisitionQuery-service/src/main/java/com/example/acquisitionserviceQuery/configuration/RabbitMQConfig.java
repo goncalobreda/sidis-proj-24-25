@@ -20,6 +20,12 @@ public class RabbitMQConfig {
     @Value("${rabbitmq.status.sync.queue.name}")
     private String statusSyncQueueName;
 
+    @Value("${rabbitmq.exchange.book-service:book-service-exchange}")
+    private String bookServiceExchangeName;
+
+    @Value("${rabbitmq.queue.book.creation.result:acquisition.book.creation.result.queue}")
+    private String bookCreationResultQueueName;
+
     public static final String BOOK_COMMAND_EXCHANGE = "book-command-exchange";
     public static final String BOOK_ROUTING_KEY = "book.sync.event";
 
@@ -28,6 +34,8 @@ public class RabbitMQConfig {
 
     public static final String ACQUISITION_EXCHANGE_NAME = "acquisition-service-exchange";
     public static final String ACQUISITION_ROUTING_KEY = "acquisition.sync.#";
+
+    private static final String BOOK_CREATION_RESULT_ROUTING_KEY = "acquisition.book.creation.result";
 
     @Bean
     public Queue acquisitionQueue() {
@@ -45,8 +53,18 @@ public class RabbitMQConfig {
     }
 
     @Bean
+    public Queue bookCreationResultQueue() {
+        return new Queue(bookCreationResultQueueName, true);
+    }
+
+    @Bean
     public TopicExchange authExchange() {
         return new TopicExchange(EXCHANGE_NAME);
+    }
+
+    @Bean
+    public TopicExchange bookServiceExchange() {
+        return new TopicExchange(bookServiceExchangeName);
     }
 
     @Bean
@@ -72,6 +90,17 @@ public class RabbitMQConfig {
     @Bean
     public Binding commandQueueBinding(Queue commandQueue, TopicExchange acquisitionExchange) {
         return BindingBuilder.bind(commandQueue).to(acquisitionExchange).with(ACQUISITION_ROUTING_KEY);
+    }
+
+    @Bean
+    public Binding bookCreationResultBinding(
+            Queue bookCreationResultQueue,
+            TopicExchange bookServiceExchange
+    ) {
+        return BindingBuilder
+                .bind(bookCreationResultQueue)
+                .to(bookServiceExchange)
+                .with(BOOK_CREATION_RESULT_ROUTING_KEY);
     }
 
     @Bean

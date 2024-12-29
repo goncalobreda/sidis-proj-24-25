@@ -72,4 +72,21 @@ public class AcquisitionServiceImpl implements AcquisitionService {
         );
     }
 
+    public void updateBookCreationStatus(String isbn, boolean success, String errorReason) {
+        acquisitionRepository.findByIsbn(isbn).ifPresentOrElse(
+                acq -> {
+                    AcquisitionStatus newStatus = success ? AcquisitionStatus.APPROVED : AcquisitionStatus.REJECTED;
+                    acq.setStatus(newStatus);
+                    if (!success && errorReason != null) {
+                        acq.setReason(errorReason);
+                    }
+                    acquisitionRepository.save(acq);
+                    logger.info("[QUERY] Acquisition com ISBN={} atualizado para {}", isbn, newStatus);
+                },
+                () -> {
+                    logger.warn("[QUERY] Acquisition não encontrada pelo ISBN={} para atualizar status de Book Creation", isbn);
+                }
+        );
+    }
+
 }

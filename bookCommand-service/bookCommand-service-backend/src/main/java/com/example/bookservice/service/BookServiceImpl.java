@@ -1,7 +1,7 @@
 package com.example.bookservice.service;
 
 
-
+import com.example.bookservice.dto.BookCreationResponseDTO;
 import com.example.bookservice.dto.BookSyncDTO;
 import com.example.bookservice.messaging.RabbitMQProducer;
 import com.example.bookservice.model.*;
@@ -214,58 +214,75 @@ public class BookServiceImpl implements BookService {
 
 
     @Override
+    @Transactional
     public void createBookFromAcquisition(BookSyncDTO bookSyncDTO) {
-        logger.info("Criando livro a partir da aquisição aprovada com ISBN: {}", bookSyncDTO.getIsbn());
+        String isbn = bookSyncDTO.getIsbn();
+        logger.info("[Book] Recebido pedido para criar livro a partir de Acquisition (ISBN={})", isbn);
 
-        // Validar se o gênero está presente
-        if (bookSyncDTO.getGenre() == null || bookSyncDTO.getGenre().isBlank()) {
-            throw new IllegalArgumentException("Genre must not be null, nor blank");
-        }
+        try {
+            // Validar entradas obrigatórias
+            if (isbn == null || isbn.isBlank()) {
+                throw new IllegalArgumentException("ISBN não pode ser nulo ou vazio");
+            }
+            if (bookSyncDTO.getTitle() == null || bookSyncDTO.getTitle().isBlank()) {
+                throw new IllegalArgumentException("Título não pode ser nulo ou vazio");
+            }
+            if (bookSyncDTO.getGenre() == null || bookSyncDTO.getGenre().isBlank()) {
+                throw new IllegalArgumentException("Gênero não pode ser nulo ou vazio");
+            }
 
-        // Criar o livro a partir da aquisição
-        Book book = new Book();
-        book.setIsbn(bookSyncDTO.getIsbn());
-        book.setTitle(bookSyncDTO.getTitle());
-        book.setDescription(bookSyncDTO.getDescription());
+            // Criar Book
+            Book book = new Book();
+            book.setIsbn(isbn);
+            book.setTitle(bookSyncDTO.getTitle());
+            book.setDescription(bookSyncDTO.getDescription());
 
-        // Buscar ou criar o gênero
-        Genre genre = genreRepository.findByInterest(bookSyncDTO.getGenre());
-        if (genre == null) {
-            genre = new Genre();
-            genre.setInterest(bookSyncDTO.getGenre());
-            genre = genreRepository.save(genre);
-            logger.info("Novo gênero criado: {}", genre.getInterest());
-        }
-        book.setGenre(genre);
+            // Processar o Genre
+            Genre genre = genreRepository.findByInterest(bookSyncDTO.getGenre());
+            if (genre == null) {
+                genre = new Genre();
+                genre.setInterest(bookSyncDTO.getGenre());
+                genre = genreRepository.save(genre);
+                logger.info("[Book] Novo gênero criado: {}", genre.getInterest());
+            }
+            book.setGenre(genre);
 
-        // Processar autores, se existirem
-        if (bookSyncDTO.getAuthors() != null) {
-            List<Author> authors = bookSyncDTO.getAuthors().stream()
-                    .map(authorDTO -> authorRepository.findByAuthorID(authorDTO.getAuthorID())
+            // Processar autores
+            if (bookSyncDTO.getAuthors() != null && !bookSyncDTO.getAuthors().isEmpty()) {
+                List<Author> authors = new ArrayList<>();
+                for (var authorDTO : bookSyncDTO.getAuthors()) {
+                    if (authorDTO.getAuthorID() == null || authorDTO.getAuthorID().isBlank()) {
+                        throw new IllegalArgumentException("AuthorID não pode ser nulo/vazio");
+                    }
+                    Author found = authorRepository.findByAuthorID(authorDTO.getAuthorID())
                             .orElseGet(() -> {
                                 Author newAuthor = new Author();
                                 newAuthor.setAuthorID(authorDTO.getAuthorID());
                                 newAuthor.setName(authorDTO.getName());
                                 newAuthor.setBiography(authorDTO.getBiography());
                                 return authorRepository.save(newAuthor);
-                            }))
-                    .collect(Collectors.toList());
-            book.setAuthor(authors);
-        } else {
-            logger.warn("Nenhum autor associado ao livro com ISBN: {}", bookSyncDTO.getIsbn());
+                            });
+                    authors.add(found);
+                }
+                book.setAuthor(authors);
+            }
+
+            // Salvar no DB
+            bookRepository.save(book);
+            logger.info("[Book] Livro criado com sucesso (ISBN={})", isbn);
+
+            // Se tudo OK, enviar success
+            rabbitMQProducer.sendBookCreationResponse(isbn, true, null);
+
+        } catch (Exception e) {
+            logger.error("[Book] Erro ao criar livro (ISBN={}): {}", isbn, e.getMessage(), e);
+            rabbitMQProducer.sendBookCreationResponse(isbn, false, e.getMessage());
         }
-
-        // Salvar o livro no banco de dados
-        bookRepository.save(book);
-        logger.info("Livro criado com sucesso a partir da aquisição aprovada: {}", book.getIsbn());
     }
-
 
     @Override
     public void handleRejectedAcquisition(BookSyncDTO bookSyncDTO) {
-        logger.info("Processando rejeição de aquisição com ISBN: {}", bookSyncDTO.getIsbn());
-
-        logger.info("Aquisição rejeitada foi processada: {}", bookSyncDTO.getIsbn());
+        // Se quiser fazer algo quando a acquisition é rejeitada...
+        logger.info("[Book] Aquisição rejeitada para ISBN={}, nada a fazer.", bookSyncDTO.getIsbn());
     }
-
 }

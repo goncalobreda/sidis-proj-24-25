@@ -15,4 +15,6 @@ public interface AcquisitionService {
 
     void updateAcquisitionStatusFromConsumer(AcquisitionSyncDTO syncDTO);
 
+    void updateBookCreationStatus(String isbn, boolean success, String errorReason);
+
 }

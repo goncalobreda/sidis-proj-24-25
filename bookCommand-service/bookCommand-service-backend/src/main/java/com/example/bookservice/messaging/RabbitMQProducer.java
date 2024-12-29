@@ -2,6 +2,7 @@ package com.example.bookservice.messaging;
 
 import com.example.bookservice.config.RabbitMQConfig;
 import com.example.bookservice.dto.AuthorDTO;
+import com.example.bookservice.dto.BookCreationResponseDTO;
 import com.example.bookservice.dto.BookSyncDTO;
 import com.example.bookservice.model.Author;
 import com.example.bookservice.model.Book;
@@ -19,6 +20,9 @@ public class RabbitMQProducer {
     private static final Logger logger = LoggerFactory.getLogger(RabbitMQProducer.class);
 
     private final RabbitTemplate rabbitTemplate;
+
+    @Value("${rabbitmq.exchange.book-service:book-service-exchange}")
+    private String bookServiceExchangeName;
 
     @Value("${instance.id}")
     private String instanceId;
@@ -60,6 +64,24 @@ public class RabbitMQProducer {
             logger.info("Author event sent: {}", authorDTO);
         } catch (Exception e) {
             logger.error("Erro ao enviar evento de autor: {}", e.getMessage(), e);
+        }
+    }
+
+    public void sendBookCreationResponse(String isbn, boolean success, String errorReason) {
+        BookCreationResponseDTO responseDTO = new BookCreationResponseDTO(isbn, success, errorReason);
+
+        final String routingKey = "acquisition.book.creation.result";
+
+        try {
+            rabbitTemplate.convertAndSend(
+                    bookServiceExchangeName, // "book-service-exchange"
+                    routingKey,              // "acquisition.book.creation.result"
+                    responseDTO
+            );
+            logger.info("[Book] Enviando BookCreationResponseDTO -> exchange={}, rk={}: {}",
+                    bookServiceExchangeName, routingKey, responseDTO);
+        } catch (Exception e) {
+            logger.error("[Book] Erro ao enviar BookCreationResponseDTO: {}", e.getMessage(), e);
         }
     }
 

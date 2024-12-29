@@ -36,6 +36,9 @@ public class RabbitMQConfig {
     @Value("${rabbitmq.queue.acquisition.reject}")
     private String acquisitionRejectQueue;
 
+    @Value("${rabbitmq.exchange.book-service:book-service-exchange}")
+    private String bookServiceExchangeName;
+
 
     @Bean
     public TopicExchange acquisitionExchange() {
@@ -45,6 +48,11 @@ public class RabbitMQConfig {
     @Bean
     public TopicExchange bookCommandExchange() {
         return new TopicExchange(bookCommandExchange);
+    }
+
+    @Bean
+    public TopicExchange bookServiceExchange() {
+        return new TopicExchange(bookServiceExchangeName);
     }
 
     @Bean
@@ -80,6 +88,22 @@ public class RabbitMQConfig {
     @Bean
     public Queue acquisitionRejectQueue() {
         return new Queue(acquisitionRejectQueue, true);
+    }
+
+    @Bean
+    public Queue acquisitionBookCreationResultQueue() {
+        return new Queue("acquisition.book.creation.result.queue", true);
+    }
+
+    @Bean
+    public Binding bindAcquisitionBookCreationResultQueue(
+            Queue acquisitionBookCreationResultQueue,
+            TopicExchange bookServiceExchange
+    ) {
+        return BindingBuilder
+                .bind(acquisitionBookCreationResultQueue)
+                .to(bookServiceExchange)
+                .with("acquisition.book.creation.result");
     }
 
 

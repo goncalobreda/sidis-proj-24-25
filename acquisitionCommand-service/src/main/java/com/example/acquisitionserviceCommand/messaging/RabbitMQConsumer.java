@@ -1,6 +1,7 @@
 package com.example.acquisitionserviceCommand.messaging;
 
 import com.example.acquisitionserviceCommand.dto.AcquisitionSyncDTO;
+import com.example.acquisitionserviceCommand.dto.BookCreationResponseDTO;
 import com.example.acquisitionserviceCommand.dto.UserSyncDTO;
 import com.example.acquisitionserviceCommand.service.AcquisitionServiceImpl;
 import org.slf4j.Logger;
@@ -18,6 +19,9 @@ public class RabbitMQConsumer {
 
     @Value("${instance.id}")
     private String instanceId;
+
+    @Value("${rabbitmq.queue.book.creation.result:acquisition.book.creation.result.queue}")
+    private String bookCreationResultQueueName;
 
     public RabbitMQConsumer(AcquisitionServiceImpl acquisitionService) {
         this.acquisitionService = acquisitionService;
@@ -75,6 +79,24 @@ public class RabbitMQConsumer {
             logger.info("Sincronização de status aplicada com sucesso para a aquisição: {}", syncDTO.getAcquisitionId());
         } catch (Exception e) {
             logger.error("Erro ao processar mensagem de sincronização de status: {}", e.getMessage(), e);
+        }
+    }
+
+    @RabbitListener(queues = "${rabbitmq.queue.book.creation.result:acquisition.book.creation.result.queue}")
+    public void handleBookCreationResult(BookCreationResponseDTO response) {
+        logger.info("Recebida BookCreationResponseDTO: {}", response);
+
+        try {
+            if (response.isSuccess()) {
+                acquisitionService.markAcquisitionAsApproved(response.getIsbn());
+                logger.info("Aquisição com ISBN={} agora APPROVED.", response.getIsbn());
+            } else {
+                acquisitionService.markAcquisitionAsRejected(response.getIsbn(), response.getErrorReason());
+                logger.warn("Aquisição com ISBN={} agora REJECTED. Motivo: {}",
+                        response.getIsbn(), response.getErrorReason());
+            }
+        } catch (Exception e) {
+            logger.error("Erro ao processar BookCreationResponseDTO: {}", e.getMessage(), e);
         }
     }
 

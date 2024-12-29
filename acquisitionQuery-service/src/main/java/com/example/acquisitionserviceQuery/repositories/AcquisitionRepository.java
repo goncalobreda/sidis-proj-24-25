@@ -19,4 +19,6 @@ public interface AcquisitionRepository {
     <S extends Acquisition> S save(S entity);
 
     Optional<Acquisition> findById(String id);
+
+    Optional<Acquisition> findByIsbn(String isbn);
 }

@@ -17,4 +17,6 @@ public interface AcquisitionRepository extends JpaRepository<Acquisition, String
 
     Optional<Acquisition> findByAcquisitionID(String acquisitionID);
 
+    Optional<Acquisition> findByIsbn(String isbn);
+
 }
