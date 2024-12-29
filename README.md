@@ -3,18 +3,18 @@
 ## Descrição do Projeto
 
 
-Este projeto é um sistema distribuído para a gestão de bibliotecas, desenvolvido com uma arquitetura de microserviços. O sistema é composto por oito microserviços organizados em módulos **Command** e **Query**, garantindo uma separação clara de responsabilidades e elevada escalabilidade.
-Este projeto implementa um sistema de gestão de bibliotecas baseado numa arquitetura de microserviços distribuídos. O sistema facilita a gestão de autenticação, readers, books (incluindo autores e géneros) e empréstimos, utilizando Message Broker RabbitMQ para comunicação entre serviços. A arquitetura foi desenhada para ser escalável, modular e de fácil manutenção.
+Este projeto é um sistema distribuído para a gestão de bibliotecas, desenvolvido com uma arquitetura de microserviços. O sistema é composto por dez microserviços organizados em módulos **Command** e **Query**, garantindo uma separação clara de responsabilidades e elevada escalabilidade.
+Este projeto implementa um sistema de gestão de bibliotecas baseado numa arquitetura de microserviços distribuídos. O sistema facilita a gestão de autenticação, readers, books (incluindo autores e géneros) e lendings, utilizando o Message Broker RabbitMQ para comunicação entre serviços. A arquitetura foi desenhada para ser escalável, modular e de fácil manutenção.
 
 A comunicação entre os microserviços é realizada de forma assíncrona através do **RabbitMQ**, assegurando fiabilidade e eficiência no processamento de mensagens. As interações do cliente com o sistema são realizadas por chamadas HTTP, permitindo a consulta e gestão dos recursos de forma simples e estruturada.
 
-O sistema permite gerir autenticação, leitores, livros e empréstimos, proporcionando uma solução completa e robusta para a gestão de bibliotecas.
+O sistema permite gerir autenticação, readers, books e lendings, proporcionando uma solução completa e robusta para a gestão de bibliotecas.
 
 ---
 
 ## Arquitetura do Sistema
 
-O sistema é composto por oito microserviços distribuídos, cada um com duas instâncias. Cada serviço é dividido em dois módulos principais:
+O sistema é composto por dez microserviços distribuídos, cada um com duas instâncias. Cada serviço é dividido em dois módulos principais:
 
 - **Command**: Responsável por operações de escrita e processamento de mensagens.
 - **Query**: Responsável por operações de leitura e consulta de dados.
@@ -69,6 +69,18 @@ O sistema é composto por oito microserviços distribuídos, cada um com duas in
     - ReaderServiceQuery1: Porta **8094**
     - ReaderServiceQuery2: Porta **8095**
 
+#### 9. Acquisition Service Command
+- **Função**: Responsável pelas sugestoes de aquisição de livros.
+- **Instâncias**:
+    - AcquisitionServiceCommand1: Porta **8096**
+    - AcquisitionServiceCommand2: Porta **8097**
+
+#### 10. Acquisition Service Query
+- **Função**: Dedicado à consulta de dados das aquisições.
+- **Instâncias**:
+    - AcquisitionServiceQuery1: Porta **8098**
+    - AcquisitionServiceQuery2: Porta **8099**
+
 ---
 
 ## Tecnologias Utilizadas
@@ -99,7 +111,6 @@ Cada microserviço disponibiliza a sua documentação através do **Swagger UI**
     - BookServiceQuery1: [http://localhost:8086/swagger-ui.html](http://localhost:8086/swagger-ui.html)
     - BookServiceQuery2: [http://localhost:8087/swagger-ui.html](http://localhost:8087/swagger-ui.html)
 
-<<<<<<< HEAD
 - **Lending Service**:
     - LendingServiceCommand1: [http://localhost:8088/swagger-ui.html](http://localhost:8088/swagger-ui.html)
     - LendingServiceCommand2: [http://localhost:8089/swagger-ui.html](http://localhost:8089/swagger-ui.html)
@@ -111,6 +122,12 @@ Cada microserviço disponibiliza a sua documentação através do **Swagger UI**
     - ReaderServiceCommand2: [http://localhost:8093/swagger-ui.html](http://localhost:8093/swagger-ui.html)
     - ReaderServiceQuery1: [http://localhost:8094/swagger-ui.html](http://localhost:8094/swagger-ui.html)
     - ReaderServiceQuery2: [http://localhost:8095/swagger-ui.html](http://localhost:8095/swagger-ui.html)
+
+- **Acquisition Service**:
+    - AcquisitionServiceCommand1: [http://localhost:8096/swagger-ui.html](http://localhost:8092/swagger-ui.html)
+    - AcquisitionServiceCommand2: [http://localhost:8097/swagger-ui.html](http://localhost:8093/swagger-ui.html)
+    - AcquisitionServiceQuery1: [http://localhost:8098/swagger-ui.html](http://localhost:8094/swagger-ui.html)
+    - AcquisitionServiceQuery2: [http://localhost:8099/swagger-ui.html](http://localhost:8095/swagger-ui.html)
 
 -Gestão de Livros: Utilizadores autenticados podem adicionar ou remover livros através do Book Service.
 
