@@ -32,9 +32,7 @@ public class LendingController {
     @Operation(summary = "Creates a new lending using CreateLendingDTO")
     @PostMapping
     public ResponseEntity<LendingView> create(@RequestBody @Valid CreateLendingDTO createLendingDTO) {
-        // 1) Chama o service passando o DTO
         final Lending lending = service.create(createLendingDTO);
-        // 2) Converte para LendingView e retorna
         return ResponseEntity.ok(lendingViewMapper.toLendingView(lending));
     }
 
@@ -63,7 +61,7 @@ public class LendingController {
             existing.setOverdue(lending.isOverdue());
             existing.setFine(lending.getFine());
             existing.setNotes(lending.getNotes());
-            existing.setVersion(lending.getVersion());
+            //existing.setVersion(lending.getVersion());
             lendingRepository.save(existing);
             return ResponseEntity.ok(existing);
         } else {

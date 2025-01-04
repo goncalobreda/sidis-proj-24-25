@@ -47,9 +47,9 @@ public class Lending {
     @Column(name = "NOTES")
     private String notes;
 
-    @Version
-    @Column(name = "VERSION", nullable = false)
-    private long version;
+    //@Version
+    //@Column(name = "VERSION", nullable = false)
+    //private long version;
 
     private static int currentYear = Year.now().getValue();
     private static int counter = 0;
@@ -67,7 +67,7 @@ public class Lending {
         this.overdue = source.isOverdue();
         this.fine = source.getFine();
         this.notes = source.getNotes();
-        this.version = source.getVersion();
+        //this.version = source.getVersion();
     }
 
 

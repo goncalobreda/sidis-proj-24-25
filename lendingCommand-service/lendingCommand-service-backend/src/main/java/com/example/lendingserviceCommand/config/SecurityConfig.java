@@ -96,7 +96,7 @@ public class SecurityConfig {
 
                 .requestMatchers(HttpMethod.POST, "/api/lendings").hasRole(Role.LIBRARIAN) // read-only lendings
 
-                .requestMatchers(HttpMethod.PATCH, "/api/lendings/{id1}/{id2}").hasRole(Role.READER) // read-only lendings
+                .requestMatchers(HttpMethod.PATCH, "/api/lendings/{id1}/{id2}").hasRole(Role.LIBRARIAN) // read-only lendings
 
 
                 // Our private endpoints

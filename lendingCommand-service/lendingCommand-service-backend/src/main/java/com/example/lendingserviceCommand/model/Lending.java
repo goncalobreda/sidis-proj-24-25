@@ -47,9 +47,7 @@ public class Lending {
     @Column(name = "NOTES")
     private String notes;
 
-    @Version
-    @Column(name = "VERSION", nullable = false)
-    private long version;
+
 
     private static int currentYear = Year.now().getValue();
     private static int counter = 0;

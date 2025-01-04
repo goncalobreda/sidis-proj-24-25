@@ -8,6 +8,7 @@ import com.example.lendingserviceQuery.repositories.ReaderRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
@@ -21,11 +22,23 @@ public class RabbitMQConsumer {
     private final ReaderRepository readerRepository;
     private final LendingRepository lendingRepository;
 
+    @Value("${rabbitmq.create.queue.name}")
+    private String createQueueName;
+
+    @Value("${rabbitmq.partial.update.queue.name}")
+    private String partialUpdateQueueName;
+
+    @Value("${rabbitmq.reader.queue.name}")
+    private String readerSyncQueueName;
+
     public RabbitMQConsumer(ReaderRepository readerRepository, LendingRepository lendingRepository) {
         this.readerRepository = readerRepository;
         this.lendingRepository = lendingRepository;
     }
 
+    // ------------------
+    // READER SYNC
+    // ------------------
     @RabbitListener(queues = "${rabbitmq.reader.queue.name}")
     public void processReaderSync(UserSyncDTO userSyncDTO) {
         LOGGER.info("Mensagem recebida para sincronizar Reader: {}", userSyncDTO);
@@ -51,25 +64,55 @@ public class RabbitMQConsumer {
         }
     }
 
-    @RabbitListener(queues = "${rabbitmq.lending.queue.name}")
-    public void processLendingSync(Lending lending) {
-        LOGGER.info("Mensagem recebida para sincronizar Lending: {}", lending);
+    // ------------------
+    // LENDING CREATE
+    // ------------------
+    @RabbitListener(queues = "${rabbitmq.create.queue.name}")
+    public void processLendingCreate(Lending lending) {
+        LOGGER.info("Mensagem recebida para CRIAR Lending (Query): {}", lending);
+
+        Optional<Lending> existingOpt = lendingRepository.findByLendingID(lending.getLendingID());
+        if (existingOpt.isPresent()) {
+            // Se já existir, podes decidir sobrescrever ou ignorar.
+            Lending existing = existingOpt.get();
+            updateLendingFields(existing, lending);
+            lendingRepository.save(existing);
+            LOGGER.info("Lending (create) sobrescrito/atualizado: {}", existing);
+        } else {
+            lendingRepository.save(lending);
+            LOGGER.info("Novo Lending (create) criado com sucesso: {}", lending);
+        }
+    }
+
+    // ------------------
+    // LENDING PARTIAL UPDATE
+    // ------------------
+    @RabbitListener(queues = "${rabbitmq.partial.update.queue.name}")
+    public void processLendingPartialUpdate(Lending lending) {
+        LOGGER.info("Mensagem recebida para PARTIAL UPDATE Lending (Query): {}", lending);
 
         Optional<Lending> existingOpt = lendingRepository.findByLendingID(lending.getLendingID());
         if (existingOpt.isPresent()) {
             Lending existing = existingOpt.get();
-            existing.setBookID(lending.getBookID());
-            existing.setReaderID(lending.getReaderID());
-            existing.setStartDate(lending.getStartDate());
-            existing.setExpectedReturnDate(lending.getExpectedReturnDate());
-            existing.setReturnDate(lending.getReturnDate());
-            existing.setOverdue(lending.isOverdue());
-            existing.setFine(lending.getFine());
+            updateLendingFields(existing, lending);
             lendingRepository.save(existing);
-            LOGGER.info("Lending atualizado com sucesso: {}", existing);
+            LOGGER.info("Lending (partial update) atualizado com sucesso: {}", existing);
         } else {
+            // Se não existir, podes criar ou ignorar. Normalmente cria-se para garantir consistência.
             lendingRepository.save(lending);
-            LOGGER.info("Novo Lending criado com sucesso: {}", lending);
+            LOGGER.info("Lending não existia, mas partial update chegou. Novo Lending criado: {}", lending);
         }
+    }
+
+    private void updateLendingFields(Lending target, Lending source) {
+        target.setBookID(source.getBookID());
+        target.setReaderID(source.getReaderID());
+        target.setStartDate(source.getStartDate());
+        target.setExpectedReturnDate(source.getExpectedReturnDate());
+        target.setReturnDate(source.getReturnDate());
+        target.setOverdue(source.isOverdue());
+        target.setFine(source.getFine());
+        target.setNotes(source.getNotes());
+        // Se retirares @Version completamente, não tens target.setVersion(...).
     }
 }

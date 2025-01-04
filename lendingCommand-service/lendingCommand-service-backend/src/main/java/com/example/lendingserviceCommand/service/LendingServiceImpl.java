@@ -111,7 +111,7 @@ public class LendingServiceImpl implements LendingService {
         Lending savedLending = lendingRepository.save(lending);
 
         // 3) Envia Mensagem p/ Query
-        rabbitMQProducer.sendMessage("lending.sync", savedLending);
+        rabbitMQProducer.sendCreateMessage(savedLending);
 
         return savedLending;
     }
@@ -123,21 +123,22 @@ public class LendingServiceImpl implements LendingService {
         Lending lending = lendingRepository.findByLendingID(lendingID)
                 .orElseThrow(() -> new NotFoundException("Lending not found."));
 
-        // Atualiza os campos modificados
+        // Atualiza os campos permitidos
         if (resource.getReturnDate() != null) {
             lending.setReturnDate(resource.getReturnDate());
             lending.updateOverdueStatus();
             lending.setFine(calculateFine(lending));
         }
-
         lending.setNotes(resource.getNotes());
+
         Lending updatedLending = lendingRepository.save(lending);
 
-        // Publicar mensagem para sincronizar com outras instâncias
-        rabbitMQProducer.sendMessage("lending.sync", updatedLending);
+        // (2) Envia para a fila de PARTIAL UPDATE
+        rabbitMQProducer.sendPartialUpdateMessage(updatedLending);
 
         return updatedLending;
     }
+
 
     @Override
     public int calculateFine(String lendingID) {

@@ -17,7 +17,7 @@ public abstract class EditLendingMapper {
     @Mapping(source = "returnDate", target = "returnDate")
     @Mapping(source = "notes", target = "notes")
     @Mapping(target = "lendingID", ignore = true) // Ignora o ID pois este não muda
-    @Mapping(target = "version", ignore = true) // Ignora a versão pois ela será tratada automaticamente
+    //@Mapping(target = "version", ignore = true) // Ignora a versão pois ela será tratada automaticamente
     @Mapping(target = "bookID", ignore = true) // Ignora o ID do livro, pois ele não será atualizado neste caso
     @Mapping(target = "readerID", ignore = true) // Ignora o ID do leitor
     @Mapping(target = "startDate", ignore = true) // Data de início também não muda

@@ -46,7 +46,7 @@ public class LendingController {
     public ResponseEntity<LendingView> findById(@PathVariable("id1") final int id1, @PathVariable("id2") final int id2) {
         final var lending = service.findById(id1, id2)
                 .orElseThrow(() -> new NotFoundException(Lending.class, id1 + "/" + id2));
-        return ResponseEntity.ok().eTag(Long.toString(lending.getVersion())).body(lendingViewMapper.toLendingView(lending));
+        return ResponseEntity.ok(lendingViewMapper.toLendingView(lending));
     }
 
 
