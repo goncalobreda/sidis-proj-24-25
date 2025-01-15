@@ -167,19 +167,9 @@ public class BookServiceImpl implements BookService {
         logger.info("Autores associados ao livro: {}",
                 authors.stream().map(Author::getAuthorID).toList());
 
-        // Atualizar a imagem do livro, se fornecida
-        if (bookSyncDTO.getBookImage() != null) {
-            // Criar ou atualizar a imagem diretamente
-            BookImage bookImage = book.getBookImage();
-            if (bookImage == null) {
-                bookImage = new BookImage();
-                bookImage.setBook(book);
-            }
-            bookImage.setImage(bookSyncDTO.getBookImage());
-            bookImage.setContentType("image/jpeg"); // Ajuste o content type, se necessário
-            bookImageRepository.save(bookImage);
-            logger.info("Imagem do livro salva/atualizada com sucesso.");
-        }
+        // Ignorar a imagem do livro
+        book.setBookImage(null);
+        logger.info("A sincronização da imagem do livro foi ignorada e definida como null.");
 
         // Salvar o livro no repositório
         Book savedBook = bookRepository.save(book);

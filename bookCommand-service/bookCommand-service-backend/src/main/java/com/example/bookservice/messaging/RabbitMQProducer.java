@@ -30,13 +30,23 @@ public class RabbitMQProducer {
     @Value("${rabbitmq.exchange.name}")
     private String bookCommandExchange;
 
+    @Value("${rabbitmq.queue.query1.book.sync}")
+    private String query1SyncQueue;
+
+    @Value("${rabbitmq.queue.query2.book.sync}")
+    private String query2SyncQueue;
+
     public void sendBookSyncEvent(Book book) {
         try {
             BookSyncDTO eventDTO = BookSyncDTO.fromBook("sync", book, instanceId);
 
-            // Enviar para a instância do Query
-            rabbitTemplate.convertAndSend(bookCommandExchange, "book.sync.query.book1", eventDTO);
-            logger.info("Book sync event sent to Query: {}", eventDTO);
+            // Enviar para o Query 1
+            rabbitTemplate.convertAndSend(bookCommandExchange, query1SyncQueue, eventDTO);
+            logger.info("Book sync event sent to Query 1: {}", eventDTO);
+
+            // Enviar para o Query 2
+            rabbitTemplate.convertAndSend(bookCommandExchange, query2SyncQueue, eventDTO);
+            logger.info("Book sync event sent to Query 2: {}", eventDTO);
 
             // Enviar para a segunda instância do Command
             rabbitTemplate.convertAndSend(bookCommandExchange, "book.sync.command.book2", eventDTO);

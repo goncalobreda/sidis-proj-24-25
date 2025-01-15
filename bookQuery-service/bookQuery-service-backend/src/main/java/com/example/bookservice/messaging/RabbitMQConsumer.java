@@ -23,12 +23,27 @@ public class RabbitMQConsumer {
         this.bookService = bookService;
     }
 
-    @RabbitListener(queues = "${rabbitmq.queue.book.sync}")
-    public void processSyncMessage(BookSyncDTO bookSyncDTO) {
-        logger.info("Mensagem recebida para sincronizar livro: {}", bookSyncDTO);
-        bookService.createOrUpdateFromBookSyncDTO(bookSyncDTO);
+    @RabbitListener(queues = "${rabbitmq.queue.book.sync.query1}")
+    public void processSyncMessageQuery1(BookSyncDTO bookSyncDTO) {
+        logger.info("Mensagem recebida para sincronizar livro (Query1): {}", bookSyncDTO);
+        try {
+            bookService.createOrUpdateFromBookSyncDTO(bookSyncDTO);
+            logger.info("Livro sincronizado com sucesso no Query1: {}", bookSyncDTO.getBookID());
+        } catch (Exception e) {
+            logger.error("Erro ao sincronizar livro no Query1: {}", e.getMessage(), e);
+        }
     }
 
+    @RabbitListener(queues = "${rabbitmq.queue.book.sync.query2}")
+    public void processSyncMessageQuery2(BookSyncDTO bookSyncDTO) {
+        logger.info("Mensagem recebida para sincronizar livro (Query2): {}", bookSyncDTO);
+        try {
+            bookService.createOrUpdateFromBookSyncDTO(bookSyncDTO);
+            logger.info("Livro sincronizado com sucesso no Query2: {}", bookSyncDTO.getBookID());
+        } catch (Exception e) {
+            logger.error("Erro ao sincronizar livro no Query2: {}", e.getMessage(), e);
+        }
+    }
 
     @RabbitListener(queues = "${rabbitmq.partial.update.queue.name}")
     public void processPartialUpdate(PartialUpdateDTO partialUpdateDTO) {
