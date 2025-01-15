@@ -30,6 +30,9 @@ public class LendingServiceImpl implements LendingService {
     private final ReaderRepository readerRepository;
     private final RabbitMQProducer rabbitMQProducer;
 
+    private final ReaderService readerService;
+
+
     @Value("${instance.id}")
     private String instanceId; // Identificador da instância atual
 
@@ -94,7 +97,6 @@ public class LendingServiceImpl implements LendingService {
         Long bookID = dto.getBookID();
         String readerID = dto.getReaderID();
 
-        // Exemplo de validações de overdue etc.:
         if (lendingRepository.existsByReaderIDAndOverdueTrue(readerID)) {
             throw new IllegalArgumentException("Reader has overdue lending and cannot borrow more books.");
         }

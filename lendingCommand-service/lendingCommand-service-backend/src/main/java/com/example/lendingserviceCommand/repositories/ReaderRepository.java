@@ -9,19 +9,16 @@ import java.util.List;
 import java.util.Optional;
 
 @Repository
-public interface ReaderRepository extends JpaRepository<Reader, String> {
+public interface ReaderRepository extends JpaRepository<Reader, Long> {
 
-    Optional<Reader> findTopByOrderByReaderIdDesc();
-
-
-
+    // "readerId" não é a PK no JPA, mas podes criar métodos custom:
+    boolean existsByReaderId(String readerId);
+    Optional<Reader> findByReaderId(String readerId);
 
     boolean existsByEmail(String email);
-
-    boolean existsByReaderId(String readerId);
-
-    Reader findByReaderId(String readerId);
-
     Optional<Reader> findByEmail(String email);
+
+    Optional<Reader> findTopByOrderByReaderIdDesc();
 }
+
 
