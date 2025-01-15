@@ -40,7 +40,6 @@
         <module>acquisitionCommand-service</module>
         <module>acquisitionQuery-service</module>
         <module>recommendationCommand-service</module>
-        <module>recommendationQuery-service</module>
     </modules> <!-- Adição dos módulos -->
 
     <dependencyManagement>
