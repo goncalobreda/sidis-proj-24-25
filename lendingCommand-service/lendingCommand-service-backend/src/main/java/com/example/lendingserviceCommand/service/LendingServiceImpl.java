@@ -8,6 +8,7 @@ import com.example.lendingserviceCommand.service.CreateLendingRequest;
 import com.example.lendingserviceCommand.exceptions.NotFoundException;
 import com.example.lendingserviceCommand.messaging.RabbitMQProducer;
 import com.example.lendingserviceCommand.model.Lending;
+import com.example.lendingserviceCommand.dto.BookReturnedEvent;
 import com.example.lendingserviceCommand.repositories.LendingRepository;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
@@ -125,18 +126,37 @@ public class LendingServiceImpl implements LendingService {
         Lending lending = lendingRepository.findByLendingID(lendingID)
                 .orElseThrow(() -> new NotFoundException("Lending not found."));
 
-        // Atualiza os campos permitidos
+        // 1) returnDate
         if (resource.getReturnDate() != null) {
             lending.setReturnDate(resource.getReturnDate());
             lending.updateOverdueStatus();
             lending.setFine(calculateFine(lending));
         }
+
+        // 2) notes
         lending.setNotes(resource.getNotes());
+
+        // 3) Salva no repositório
 
         Lending updatedLending = lendingRepository.save(lending);
 
-        // (2) Envia para a fila de PARTIAL UPDATE
+        // 4) Continua a enviar partial update p/ Query (como antes)
         rabbitMQProducer.sendPartialUpdateMessage(updatedLending);
+
+        // 5) Verifica recommendation
+        String recommendation = resource.getRecommendation();
+        if (recommendation != null && !recommendation.isBlank()) {
+            // Construir BookReturnedEvent
+            BookReturnedEvent event = new BookReturnedEvent();
+            event.setLendingID(lending.getLendingID());
+            event.setBookID(lending.getBookID());
+            event.setReaderID(lending.getReaderID());
+            event.setRecommendation(recommendation);
+
+            // Enviar ao RecommendationCommand
+            rabbitMQProducer.sendBookReturnedEvent(event);
+            logger.info("BookReturnedEvent enviado com recommendation={}", recommendation);
+        }
 
         return updatedLending;
     }

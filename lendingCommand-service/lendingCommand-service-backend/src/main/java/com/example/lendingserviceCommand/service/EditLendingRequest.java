@@ -13,13 +13,12 @@ import java.time.LocalDate;
 public class EditLendingRequest {
 
     @Column(nullable = true)
-    @Getter
-    @Setter
     @FutureOrPresent(message = "A data de devolução não pode ser no passado.")
     private LocalDate returnDate;
 
     @Column(nullable = true)
-    @Getter
-    @Setter
     private String notes;
+
+    // Novo campo (importante para Recommendation)
+    private String recommendation; // Ex.: "positive" ou "negative"
 }

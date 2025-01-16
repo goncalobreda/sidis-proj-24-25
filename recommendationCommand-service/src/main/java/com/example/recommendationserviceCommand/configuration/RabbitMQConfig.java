@@ -11,17 +11,43 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class RabbitMQConfig {
 
+    // Exchange configurado no .properties
     @Value("${rabbitmq.exchange.name}")
     private String exchangeName;
 
+    // Queue que vais usar para receber o "BookReturnedEvent"
+    // Podes definir "recommendation1.bookreturned.queue" no application.properties
+    @Value("${rabbitmq.bookreturned.queue.name}")
+    private String bookReturnedQueueName;
+
+    // Se quiseres parametrizar a routing key, podes (ou usar valor fixo "lending.returned.#")
+    private static final String BOOK_RETURNED_ROUTING_KEY = "lending.returned.#";
+
     @Bean
     public TopicExchange recommendationExchange() {
+        // O MESMO exchange que o Lending usa: "lending-service-exchange"
         return new TopicExchange(exchangeName);
     }
 
-    // Se quiseres filas específicas p/ Recommendation, Declara aqui.
-    // Exemplo: Uma queue que escuta "lending.returned.#"
-    // e binds a esse exchange, etc.
+    /**
+     * Declara a queue para receber BookReturnedEvent
+     */
+    @Bean
+    public Queue bookReturnedQueue(@Value("${rabbitmq.bookreturned.queue.name}") String queueName) {
+        return new Queue(queueName, true);
+    }
+
+    /**
+     * Faz o binding entre a queue e a routing key "lending.returned.#".
+     * Assim, qualquer mensagem enviada com routingKey que comece por "lending.returned."
+     * cairá nesta queue.
+     */
+    @Bean
+    public Binding bookReturnedBinding(Queue bookReturnedQueue, TopicExchange recommendationExchange) {
+        return BindingBuilder.bind(bookReturnedQueue)
+                .to(recommendationExchange)
+                .with("lending.returned.#");
+    }
 
     @Bean
     public Jackson2JsonMessageConverter messageConverter() {

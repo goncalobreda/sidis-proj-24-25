@@ -49,4 +49,15 @@ public class RabbitMQProducer {
             logger.error("Erro ao enviar mensagem para RabbitMQ: {}", e.getMessage(), e);
         }
     }
+
+    public <T> void sendBookReturnedEvent(T event) {
+        try {
+            String routingKey = "lending.returned." + instanceId;
+            rabbitTemplate.convertAndSend(exchangeName, routingKey, event);
+            logger.info("BookReturnedEvent enviado: routingKey={}, payload={}", routingKey, event);
+        } catch (Exception e) {
+            logger.error("Erro ao enviar BookReturnedEvent: {}", e.getMessage(), e);
+        }
+    }
+
 }

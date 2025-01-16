@@ -17,7 +17,7 @@ public class RabbitMQConsumer {
     private final RecommendationService recommendationService;
     private final RabbitMQProducer producer;
 
-    @RabbitListener(queues = "${rabbitmq.queue.bookreturned}")
+    @RabbitListener(queues = "${rabbitmq.bookreturned.queue.name}")
     public void processBookReturned(BookReturnedEvent event) {
         logger.info("Recebido BookReturnedEvent: {}", event);
 
